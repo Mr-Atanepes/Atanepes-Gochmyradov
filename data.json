@@ -1,0 +1,144 @@
+{
+  "jobStatus": "available",
+  "firstName": "Atanepes",
+  "lastName": "Gochmyradov",
+  "title": "// Junior Full-Stack Web Developer",
+  "tagline": "Aspiring web developer with 3 months of intensive MERN stack training. Passionate about building responsive, user-friendly web applications and contributing to real-world projects.",
+  "email": "atanepesgochmyradov@gmail.com",
+  "phone": "+971 58 558 3938",
+  "location": "Dubai, International City, UAE",
+  "terminalName": "\"Atanepes Gochmyradov\"",
+  "terminalRole": "\"Full-Stack Developer\"",
+  "terminalLevel": "\"Junior\"",
+  "terminalStack": "[\"MongoDB\",\"Express\",\"React\",\"Node\"]",
+  "terminalLocation": "\"Dubai, UAE 🇦🇪\"",
+  "terminalLanguages": "[\"EN\",\"RO\",\"RU\",\"TR\"]",
+  "aboutP1": "I'm an <strong>aspiring full-stack web developer</strong> with a solid foundation in both front-end and back-end technologies, built through 3 months of intensive bootcamp training at Teach Me Code.",
+  "aboutP2": "My experience spans personal projects including a <strong>food ordering app</strong> and a <strong>to-do list application</strong>, using HTML, CSS, JavaScript, and React on the frontend with Node.js, Express, and MongoDB powering the backend.",
+  "aboutP3": "I'm eager to grow in a professional environment, collaborate with experienced teams, and ship real-world products that users love.",
+  "profReact": 65,
+  "profHTML": 72,
+  "profNode": 60,
+  "profMongo": 58,
+  "profDocker": 30,
+  "frontendSkills": [
+    {
+      "name": "UX/UI Design",
+      "detail": "Wireframing, Prototyping, Personas",
+      "icon": "🎨"
+    },
+    {
+      "name": "HTML5",
+      "detail": "Semantic markup, Forms, Accessibility",
+      "icon": "🌐"
+    },
+    {
+      "name": "CSS3",
+      "detail": "Flexbox, Grid, Animations, Media Queries",
+      "icon": "💅"
+    },
+    {
+      "name": "JavaScript ES6+",
+      "detail": "Promises, async/await, DOM, Closures",
+      "icon": "⚡"
+    },
+    {
+      "name": "React",
+      "detail": "Components, Hooks, Context API, Lazy Loading",
+      "icon": "⚛️"
+    }
+  ],
+  "backendSkills": [
+    {
+      "name": "Node.js",
+      "detail": "Server-Side JS, Async, Error Handling",
+      "icon": "🟢"
+    },
+    {
+      "name": "Express.js",
+      "detail": "REST APIs, Middleware, Routing",
+      "icon": "🚂"
+    },
+    {
+      "name": "MongoDB",
+      "detail": "Mongoose, CRUD, Schemas",
+      "icon": "🍃"
+    },
+    {
+      "name": "Authentication",
+      "detail": "JWT, RBAC, Sessions",
+      "icon": "🔐"
+    }
+  ],
+  "devopsSkills": [
+    {
+      "name": "Git & GitHub",
+      "detail": "Version Control, Branching",
+      "icon": "🐙"
+    },
+    {
+      "name": "Docker",
+      "detail": "Containers, Compose",
+      "icon": "🐳"
+    },
+    {
+      "name": "CI/CD",
+      "detail": "GitHub Actions, Pipelines",
+      "icon": "⚙️"
+    }
+  ],
+  "experience": [
+    {
+      "company": "Teach Me Code",
+      "role": "// Full-Stack Development Bootcamp",
+      "period": "Jun 2024 — Sep 2024",
+      "bullets": [
+        "Completed intensive full-stack bootcamp covering MERN stack, REST APIs, and responsive design.",
+        "Built production-ready full-stack apps with authentication, file uploads, and RBAC.",
+        "Gained hands-on Git/GitHub collaboration, Docker basics, and CI/CD pipelines.",
+        "Optimized performance, debugging, and cross-browser compatibility."
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "id": 1,
+      "name": "Food Ordering App",
+      "desc": "Fully responsive food ordering web app with cart, product listings, and smooth UX across all devices.",
+      "tags": ["HTML", "CSS", "JavaScript", "React"],
+      "status": "featured",
+      "github": "https://github.com/atanepes/food-order-app",
+      "demo": "https://foodie-demo.vercel.app"
+    },
+    {
+      "id": 2,
+      "name": "To-Do List App",
+      "desc": "Task management with CRUD, persistent storage, mobile-first design, and clean interactions.",
+      "tags": ["HTML", "CSS", "JavaScript"],
+      "status": "normal",
+      "github": "https://github.com/atanepes/todo-app",
+      "demo": "https://todo-demo.netlify.app"
+    },
+    {
+      "id": 3,
+      "name": "Full-Stack Bootcamp App",
+      "desc": "Production-grade MERN application with RBAC, JWT, file uploads, and optimized performance.",
+      "tags": ["Node.js", "Express", "MongoDB", "React", "JWT"],
+      "status": "featured",
+      "github": "https://github.com/atanepes/fullstack-bootcamp",
+      "demo": "https://bootcamp-app.onrender.com"
+    }
+  ],
+  "education": [
+    {
+      "degree": "Web Development Bootcamp",
+      "school": "Teach Me Code — Full-Time Intensive",
+      "period": "June 2024 — September 2024"
+    },
+    {
+      "degree": "University Degree",
+      "school": "University of Bucharest · Romanian-American University",
+      "period": "October 2019 — June 2023"
+    }
+  ]
+}
