@@ -3041,7 +3041,7 @@
         const localPathUrl = `../data.json?t=${Date.now()}`;
 
         try {
-          const response = await fetch(rawUrl, {
+          const response = await fetch(localPathUrl, {
             headers: {
               // 🌟 FIXED: Standard headers only to keep it clean and cross-browser safe
               "Cache-Control": "no-cache, no-store, must-revalidate",
