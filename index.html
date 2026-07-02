@@ -263,7 +263,7 @@
         font-size: 0.65rem;
         color: var(--white);
         font-weight: 300;
-        opacity: 0.8; /* slightly softer than pure white */
+        opacity: 0.8;
       }
       .hero-badge {
         display: inline-flex;
@@ -453,7 +453,6 @@
         font-family: var(--font-mono);
         font-size: 0.7rem;
         color: var(--muted);
-        /* margin-left: 0.5rem; */
       }
       .terminal-body {
         padding: 1.5rem;
@@ -615,7 +614,7 @@
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: var(--r);
-        padding: 1.4rem; /* was 1.2rem */
+        padding: 1.4rem;
         backdrop-filter: blur(10px);
         transition: all 0.2s;
         cursor: pointer;
@@ -911,7 +910,6 @@
         opacity: 1;
         transform: translateY(0);
       }
-      /* Card flip container */
       .project-card {
         perspective: 1000px;
         background: transparent !important;
@@ -937,7 +935,6 @@
         border-color: var(--cyan);
         box-shadow: 0 10px 40px rgba(0, 229, 255, 0.1);
       }
-      /* Front and back faces */
       .project-card-front,
       .project-card-back {
         position: absolute;
@@ -954,13 +951,11 @@
         display: flex;
         flex-direction: column;
       }
-      /* Front face */
       .project-card-front {
         display: flex;
         flex-direction: column;
       }
 
-      /* Back face (rotated) */
       .project-card-back {
         transform: rotateY(180deg);
         display: flex;
@@ -1384,7 +1379,6 @@
           display: none;
         }
       }
-      /* Mobile: keep hero buttons side by side in all languages */
       @media (max-width: 480px) {
         .hero-name {
           font-size: clamp(1.8rem, 6vw, 2.5rem);
@@ -1822,6 +1816,7 @@
 
     <script>
       (function () {
+        // ── translations ──
         const translations = {
           en: {
             "nav-about": "About",
@@ -1989,6 +1984,8 @@
               "<span>HTML · CSS · JS</span> ile oluşturuldu — Çerçeve gerekmez.",
           },
         };
+
+        // ── default state ──
         const defaultState = {
           jobStatus: "available",
           firstName: "Atanepes",
@@ -2125,33 +2122,15 @@
             },
           ],
         };
+
+        // ── state ──
         let state = JSON.parse(JSON.stringify(defaultState));
         let currentLang = "en";
 
-        async function loadState() {
-          const s = localStorage.getItem("portfolioState");
-          if (s) {
-            try {
-              const p = JSON.parse(s);
-              state = { ...defaultState, ...p };
-              if (!state.projects?.length)
-                state.projects = [...defaultState.projects];
-              return;
-            } catch (e) {}
-          }
-          try {
-            const res = await fetch("data.json");
-            if (res.ok) {
-              const p = await res.json();
-              state = { ...defaultState, ...p };
-              if (!state.projects?.length)
-                state.projects = [...defaultState.projects];
-              return;
-            }
-          } catch (e) {}
-          state = JSON.parse(JSON.stringify(defaultState));
-        }
+        // ── GLOBAL TRACKING: last fetched data string ──
+        let lastFetchedStateStr = null;
 
+        // ── helpers ──
         function showUpdateToast(msg) {
           let t = document.getElementById("updateToast");
           if (!t) {
@@ -2166,35 +2145,81 @@
           t._timer = setTimeout(() => t.classList.remove("show"), 4000);
         }
 
-        // --- Periodic fetch with cache-busting ---
-        let lastFetchedStateStr = null;
+        // ── CORE FETCH with cache-busting & no-cache headers ──
+        async function fetchDataJson() {
+          const url = "data.json?t=" + new Date().getTime();
+          const res = await fetch(url, {
+            headers: {
+              "Cache-Control": "no-cache",
+              Pragma: "no-cache",
+            },
+          });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return await res.json();
+        }
 
-        async function fetchUpdates() {
-          try {
-            const url = "data.json?t=" + new Date().getTime();
-            const res = await fetch(url, {
-              headers: { "Cache-Control": "no-cache" },
-            });
-            if (!res.ok) return;
-            const newData = await res.json();
-            const newState = { ...defaultState, ...newData };
-            if (!newState.projects?.length)
-              newState.projects = [...defaultState.projects];
-            const newStr = JSON.stringify(newState);
-            const currentStr = JSON.stringify(state);
-            if (newStr !== currentStr) {
-              state = newState;
-              // re-render everything
-              renderAll();
-              showUpdateToast("🔄 Data updated");
+        // ── load initial state (localStorage first, then fresh fetch) ──
+        async function loadState() {
+          // 1) try localStorage
+          const saved = localStorage.getItem("portfolioState");
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved);
+              state = { ...defaultState, ...parsed };
+              if (!state.projects?.length)
+                state.projects = [...defaultState.projects];
+              // track this as the baseline
+              lastFetchedStateStr = JSON.stringify(state);
+              return;
+            } catch (_) {
+              /* ignore */
             }
-          } catch (e) {
-            console.warn("Periodic fetch failed", e);
+          }
+
+          // 2) fresh fetch with cache-busting
+          try {
+            const fresh = await fetchDataJson();
+            const merged = { ...defaultState, ...fresh };
+            if (!merged.projects?.length)
+              merged.projects = [...defaultState.projects];
+            state = merged;
+            // track the fetched string
+            lastFetchedStateStr = JSON.stringify(state);
+            // persist to localStorage
+            localStorage.setItem("portfolioState", JSON.stringify(state));
+          } catch (_) {
+            // fallback to default
+            state = JSON.parse(JSON.stringify(defaultState));
+            lastFetchedStateStr = JSON.stringify(state);
           }
         }
 
-        async function renderAll() {
-          await loadState();
+        // ── POLLING: fetch fresh data, compare with tracked string ──
+        async function pollForUpdates() {
+          try {
+            const fresh = await fetchDataJson();
+            const merged = { ...defaultState, ...fresh };
+            if (!merged.projects?.length)
+              merged.projects = [...defaultState.projects];
+            const newStr = JSON.stringify(merged);
+
+            // Only re-render if the data actually changed
+            if (newStr !== lastFetchedStateStr) {
+              lastFetchedStateStr = newStr;
+              state = merged;
+              // persist to localStorage
+              localStorage.setItem("portfolioState", JSON.stringify(state));
+              // re-render the entire UI
+              renderAll();
+              showUpdateToast("🔄 Data updated — latest changes applied");
+            }
+          } catch (e) {
+            // silent fail — no need to spam console
+          }
+        }
+
+        // ── render all DOM elements from state ──
+        function renderAll() {
           const avail = state.jobStatus === "available";
           const badge = document.getElementById("heroBadge");
           badge.textContent = avail
@@ -2206,6 +2231,7 @@
             "data-translate",
             avail ? "hero-badge" : "hero-badge-not",
           );
+
           document.getElementById("heroName").innerHTML =
             '<span class="first-name">' +
             state.firstName +
@@ -2216,10 +2242,8 @@
           document.getElementById("heroDesc").textContent = state.tagline;
           document.getElementById("termName").textContent = state.terminalName;
           document.getElementById("termRole").textContent = state.terminalRole;
-          document.getElementById("termLevel").textContent =
-            state.terminalLevel;
-          document.getElementById("termStack").textContent =
-            state.terminalStack;
+          document.getElementById("termLevel").textContent = state.terminalLevel;
+          document.getElementById("termStack").textContent = state.terminalStack;
           document.getElementById("termLocation").textContent =
             state.terminalLocation;
           document.getElementById("termLanguages").textContent =
@@ -2227,6 +2251,8 @@
           document.getElementById("aboutP1").innerHTML = state.aboutP1;
           document.getElementById("aboutP2").innerHTML = state.aboutP2;
           document.getElementById("aboutP3").innerHTML = state.aboutP3;
+
+          // skill bars
           const bars = [
             { n: "React & JavaScript", v: state.profReact, c: "fill-int" },
             { n: "HTML & CSS", v: state.profHTML, c: "fill-int" },
@@ -2248,6 +2274,8 @@
                 '"></div></div></div>',
             )
             .join("");
+
+          // skills categories
           const skillCats = [
             { labelKey: "cat-frontend", skills: state.frontendSkills },
             { labelKey: "cat-backend", skills: state.backendSkills },
@@ -2276,6 +2304,8 @@
                 "</div></div>",
             )
             .join("");
+
+          // experience
           document.getElementById("experienceContainer").innerHTML =
             state.experience
               .map(
@@ -2291,6 +2321,8 @@
                   "</ul></div></div>",
               )
               .join("");
+
+          // projects
           document.getElementById("projectsContainer").innerHTML =
             state.projects
               .map(
@@ -2361,6 +2393,7 @@
               )
               .join("");
 
+          // education
           document.getElementById("educationContainer").innerHTML =
             state.education
               .map(
@@ -2374,6 +2407,8 @@
                   "</div></div></div>",
               )
               .join("");
+
+          // contact links
           document.getElementById("contactLinks").innerHTML =
             '<a href="mailto:' +
             state.email +
@@ -2400,6 +2435,7 @@
             "</div>" +
             "</div></div>";
 
+          // availability
           const availBadge = document.getElementById("availabilityText");
           const availContainer = availBadge.closest(".availability");
           if (state.jobStatus === "available") {
@@ -2424,10 +2460,22 @@
             if (dot) dot.style.background = "#ff6b6b";
           }
 
-          document
-            .getElementById("availabilityText")
-            .setAttribute("data-translate", "availability");
-          setTimeout(function () {
+          const contactIntro = document.getElementById("contactIntro");
+          if (contactIntro) {
+            if (state.jobStatus === "available") {
+              contactIntro.textContent =
+                "I'm actively looking for my first professional role as a full-stack developer. Whether you have a project, a junior opening, or just want to chat — my inbox is open.";
+            } else {
+              contactIntro.textContent =
+                "I'm currently employed but always open to exciting opportunities. Whether you have a project, collaboration idea, or just want to connect — don't hesitate to reach out.";
+            }
+          }
+
+          // apply language after DOM update
+          applyLanguage(currentLang);
+
+          // animate skill bars & reveal items
+          setTimeout(() => {
             document.querySelectorAll(".prof-fill").forEach(function (b) {
               if (b.dataset.width) b.style.width = b.dataset.width + "%";
             });
@@ -2436,23 +2484,13 @@
               .forEach(function (el) {
                 el.classList.add("visible");
               });
-            applyLanguage(currentLang);
-
-            const contactIntro = document.getElementById("contactIntro");
-            if (contactIntro) {
-              if (state.jobStatus === "available") {
-                contactIntro.textContent =
-                  "I'm actively looking for my first professional role as a full-stack developer. Whether you have a project, a junior opening, or just want to chat — my inbox is open.";
-              } else {
-                contactIntro.textContent =
-                  "I'm currently employed but always open to exciting opportunities. Whether you have a project, collaboration idea, or just want to connect — don't hesitate to reach out.";
-              }
-            }
           }, 100);
+
           document.getElementById("currentYear").textContent =
             new Date().getFullYear();
         }
 
+        // ── language apply ──
         function applyLanguage(lang) {
           if (!translations[lang]) return;
           currentLang = lang;
@@ -2478,11 +2516,10 @@
               btn.getAttribute("data-lang") === lang,
             );
           });
-          setTimeout(function () {
-            document.body.classList.remove("transitioning");
-          }, 150);
+          setTimeout(() => document.body.classList.remove("transitioning"), 150);
         }
 
+        // ── language switcher listeners ──
         document.querySelectorAll(".lang-btn").forEach(function (btn) {
           btn.addEventListener("click", function (e) {
             applyLanguage(btn.getAttribute("data-lang"));
@@ -2490,35 +2527,45 @@
           });
         });
 
-        const navToggle = document.getElementById("navToggle"),
-          mobileMenu = document.getElementById("mobileMenu"),
-          mobileClose = document.getElementById("mobileClose");
-        function toggleMobileMenu(s) {
-          if (s === "open") mobileMenu.classList.add("open");
-          else if (s === "close") mobileMenu.classList.remove("open");
+        // ── mobile menu ──
+        const navToggle = document.getElementById("navToggle");
+        const mobileMenu = document.getElementById("mobileMenu");
+        const mobileClose = document.getElementById("mobileClose");
+
+        function toggleMobileMenu(force) {
+          if (force === "open") mobileMenu.classList.add("open");
+          else if (force === "close") mobileMenu.classList.remove("open");
           else mobileMenu.classList.toggle("open");
         }
-        if (navToggle)
+
+        if (navToggle) {
           navToggle.addEventListener("click", function (e) {
             e.stopPropagation();
             toggleMobileMenu();
           });
-        if (mobileClose)
+        }
+        if (mobileClose) {
           mobileClose.addEventListener("click", function () {
             toggleMobileMenu("close");
           });
+        }
         document.querySelectorAll(".mobile-nav-link").forEach(function (l) {
           l.addEventListener("click", function () {
             toggleMobileMenu("close");
           });
         });
+
+        // ── scroll shadow ──
         window.addEventListener("scroll", function () {
-          var n = document.getElementById("navbar");
-          if (n)
+          const n = document.getElementById("navbar");
+          if (n) {
             n.style.boxShadow =
               window.scrollY > 40 ? "0 4px 30px rgba(0,0,0,.5)" : "none";
+          }
         });
-        var observer = new IntersectionObserver(
+
+        // ── intersection observer for reveals ──
+        const observer = new IntersectionObserver(
           function (entries) {
             entries.forEach(function (e) {
               if (e.isIntersecting) {
@@ -2536,47 +2583,58 @@
           .forEach(function (el) {
             observer.observe(el);
           });
+
+        // ── project card staggered delay ──
         document.querySelectorAll(".project-card").forEach(function (card, i) {
           card.style.transitionDelay = i * 0.1 + "s";
         });
-        var lines = document.querySelectorAll(".terminal-body .t-line");
+
+        // ── terminal line animation ──
+        const lines = document.querySelectorAll(".terminal-body .t-line");
         lines.forEach(function (line, i) {
           line.style.opacity = "0";
-          setTimeout(
-            function () {
-              line.style.transition = "opacity .3s";
-              line.style.opacity = "1";
-            },
-            400 + i * 180,
-          );
+          setTimeout(function () {
+            line.style.transition = "opacity .3s";
+            line.style.opacity = "1";
+          }, 400 + i * 180);
         });
-        var sections = document.querySelectorAll("section[id]"),
-          navLinks = document.querySelectorAll(".nav-links a");
+
+        // ── nav highlight ──
+        const sections = document.querySelectorAll("section[id]");
+        const navLinks = document.querySelectorAll(".nav-links a");
         window.addEventListener("scroll", function () {
-          var c = "";
+          let current = "";
           sections.forEach(function (s) {
-            if (window.scrollY >= s.offsetTop - 120) c = s.id;
+            if (window.scrollY >= s.offsetTop - 120) current = s.id;
           });
           navLinks.forEach(function (l) {
-            if (l.getAttribute("href"))
+            if (l.getAttribute("href")) {
               l.style.color =
-                l.getAttribute("href") === "#" + c ? "var(--cyan)" : "";
+                l.getAttribute("href") === "#" + current ? "var(--cyan)" : "";
+            }
           });
         });
 
+        // ── storage event (cross-tab sync) ──
         window.addEventListener("storage", function (e) {
           if (e.key === "portfolioLastUpdated") {
-            loadState();
-            renderAll();
-            showUpdateToast("🔄 Portfolio updated — showing latest changes");
+            loadState().then(() => {
+              renderAll();
+              showUpdateToast("🔄 Portfolio updated — latest changes applied");
+            });
           }
         });
 
-        // Initial render
-        renderAll().then(() => {
-          // Start periodic updates every 30 seconds
-          setInterval(fetchUpdates, 30000);
-        });
+        // ── BOOT ──
+        async function boot() {
+          await loadState();
+          renderAll();
+
+          // ── BACKGROUND POLLING: every 10 seconds ──
+          setInterval(pollForUpdates, 10000);
+        }
+
+        boot();
       })();
     </script>
   </body>
