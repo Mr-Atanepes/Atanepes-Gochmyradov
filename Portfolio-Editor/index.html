@@ -2913,7 +2913,7 @@
       }
 
 
-      async function autoPushToGitHub() {
+           async function autoPushToGitHub() {
         syncFromDOM();
         saveToStorage();
 
@@ -2924,8 +2924,11 @@
         const OWNER = "Mr-Atanepes";
         const REPO = "Atanepes-Gochmyradov";
         const PATH = "data.json";
+        
+        // 1. Separation of concerns: Keep the base clean, use buster string ONLY on the GET path
+        const baseApiUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`;
         const timestamp = Date.now();
-        const apiUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}?t=${timestamp}`;
+        const getApiUrl = `${baseApiUrl}?t=${timestamp}`;
 
         const content = btoa(
           unescape(encodeURIComponent(JSON.stringify(state, null, 2))),
@@ -2940,11 +2943,13 @@
           };
           if (TOKEN) headers.Authorization = `token ${TOKEN}`;
 
-          const getRes = await fetch(apiUrl, { headers });
+          // 2. Fetch the fresh file metadata metadata string using the GET URL cache buster
+          const getRes = await fetch(getApiUrl, { headers });
           if (!getRes.ok) throw new Error("Failed to fetch file info");
           const getData = await getRes.json();
 
-          const putRes = await fetch(apiUrl, {
+          // 3. Send the write request to the clean base target URL structure without query hooks!
+          const putRes = await fetch(baseApiUrl, {
             method: "PUT",
             headers: {
               ...headers,
@@ -2953,12 +2958,15 @@
             body: JSON.stringify({
               message: "Update portfolio data",
               content: content,
-              sha: getData.sha,
+              sha: getData.sha, // Passes the 100% correct fresh hash index
             }),
           });
 
           if (putRes.ok) {
-            showToast("✓ Published to GitHub — live in 1-2 minutes!", "success");
+            showToast(
+              "✓ Published to GitHub — live in 1-2 minutes!",
+              "success",
+            );
           } else {
             const errData = await putRes.json();
             showToast("⚠️ Push failed: " + errData.message, "error");
@@ -2968,7 +2976,7 @@
           console.error(e);
         }
       }
-      function saveAndPublish() {
+ function saveAndPublish() {
         syncFromDOM();
         saveToStorage();
         renderAll();
