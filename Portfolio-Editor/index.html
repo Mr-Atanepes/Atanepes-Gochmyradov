@@ -3015,7 +3015,7 @@
         }
       }
 
-      // ================================================================
+          // ================================================================
       // 1. ANTI-CORS BACKGROUND SYNC ENGINE (runs every 8 seconds)
       // ================================================================
       let lastFetchedContent = null;
@@ -3037,23 +3037,22 @@
         const PATH = "data.json";
         const timestamp = Date.now();
 
-        // Official GitHub API endpoint with cache‑busting timestamp
-        const apiUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}?t=${timestamp}`;
+        // 🌟 FIXED: Use ://githubusercontent.com. It handles cache-busting (?t=) perfectly without security locks!
+        const rawUrl = `https://://githubusercontent.com/${OWNER}/${REPO}/main/${PATH}?t=${timestamp}`;
 
         try {
-          const response = await fetch(apiUrl, {
+          const response = await fetch(rawUrl, {
             headers: {
-              // Anti‑CORS: raw+json media type
-              "Accept": "application/vnd.github.v3.raw+json",
+              // 🌟 FIXED: Standard headers only to keep it clean and cross-browser safe
               "Cache-Control": "no-cache, no-store, must-revalidate",
-              Pragma: "no-cache",
-              Expires: "0",
+              "Pragma": "no-cache",
+              "Expires": "0",
             },
           });
 
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-          // With raw+json, the response body is the raw file content (JSON string)
+          // Read the raw text directly from the file
           const fetchedText = await response.text();
           const currentStateStr = JSON.stringify(state);
 
