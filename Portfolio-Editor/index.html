@@ -2875,11 +2875,12 @@
         // 1. Force the browser to completely ignore its local cache using time strings
         const timestamp = new Date().getTime();
         
-        // 2. FIXED ENDPOINT: We use the raw server path. It has no strict browser CORS locks!
-        const rawUrl = `https://githubusercontent.com{OWNER}/${REPO}/main/${PATH}?t=${timestamp}`;
+      // 2. FIXED ENDPOINT: Look inside your own website folder cleanly!
+const localPathUrl = `../data.json?t=${timestamp}`;
 
-        try {
-          const res = await fetch(rawUrl, { 
+try {
+  // 3. MATCHED VARIABLE: fetch uses localPathUrl, output goes to res
+  const res = await fetch(localPathUrl, {
             headers: {
               "Cache-Control": "no-cache, no-store, must-revalidate",
               "Pragma": "no-cache",
