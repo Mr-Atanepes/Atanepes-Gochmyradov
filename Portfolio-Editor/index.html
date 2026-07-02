@@ -2867,32 +2867,31 @@
         renderAll();
         showToast("✓ All changes saved successfully", "success");
       }
-
       async function fetchFromGitHub() {
-        const TOKEN =
-          typeof config !== "undefined" && config.Github_Token
-            ? config.Github_Token
-            : null;
         const OWNER = "Mr-Atanepes";
         const REPO = "Atanepes-Gochmyradov";
         const PATH = "data.json";
-        const timestamp = Date.now();
-        const apiUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}?t=${timestamp}`;
+        
+        // 1. Force the browser to completely ignore its local cache using time strings
+        const timestamp = new Date().getTime();
+        
+        // 2. FIXED ENDPOINT: We use the raw server path. It has no strict browser CORS locks!
+        const rawUrl = `https://githubusercontent.com{OWNER}/${REPO}/main/${PATH}?t=${timestamp}`;
 
         try {
-          const headers = {
-            Accept: "application/vnd.github.v3+json",
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          };
-          if (TOKEN) headers.Authorization = `token ${TOKEN}`;
-
-          const res = await fetch(apiUrl, { headers });
+          const res = await fetch(rawUrl, { 
+            headers: {
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              "Pragma": "no-cache",
+              "Expires": "0"
+            } 
+          });
+          
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
-          const content = atob(data.content);
-          const parsed = JSON.parse(content);
+          
+          // 3. FIXED PARSING: The raw link returns text directly, no need for complex 'atob()' conversions!
+          const parsed = await res.json();
+          
           const merged = { ...defaultState, ...parsed };
           if (!merged.projects?.length)
             merged.projects = [...defaultState.projects];
@@ -2900,6 +2899,7 @@
             ...p,
             id: p.id || Date.now() + Math.random(),
           }));
+          
           state = merged;
           saveToStorage();
           renderAll();
@@ -2911,6 +2911,7 @@
           showToast("⚠️ Using local data (GitHub unavailable)", "info");
         }
       }
+
 
       async function autoPushToGitHub() {
         syncFromDOM();
