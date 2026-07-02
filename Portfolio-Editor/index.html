@@ -3038,7 +3038,7 @@
         const timestamp = Date.now();
 
         // 🌟 FIXED: Use ://githubusercontent.com. It handles cache-busting (?t=) perfectly without security locks!
-        const rawUrl = `https://://githubusercontent.com/${OWNER}/${REPO}/main/${PATH}?t=${timestamp}`;
+        const localPathUrl = `../data.json?t=${Date.now()}`;
 
         try {
           const response = await fetch(rawUrl, {
