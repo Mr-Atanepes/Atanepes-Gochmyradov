@@ -456,24 +456,6 @@
         }
       }
 
-      /* .hero-name {
-        font-family: var(--font-display);
-        font-size: clamp(2.2rem, 4.5vw, 3.8rem);
-        font-size: clamp(2rem, 8vw, 5rem);
-        font-weight: 700;
-        line-height: 1.2;
-        letter-spacing: -0.02em;
-        animation: fadeUp 0.6s 0.2s both;
-        word-break: keep-all;
-        max-width: 100%;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        justify-content: flex-start;
-        gap: 0.35rem;
-        overflow-wrap: normal;
-      } */
-
       .hero-name {
         font-family: var(--font-display);
         font-size: clamp(2rem, 8vw, 5rem);
@@ -506,7 +488,6 @@
         font-style: normal;
         color: transparent;
         -webkit-text-stroke: 1.2px var(--cyan);
-        /* text-stroke: 1.2px var(--cyan); */
         white-space: nowrap;
         font-weight: 700;
         display: inline-block;
@@ -541,7 +522,6 @@
         box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.1);
       }
       .master-pane .hero-name em {
-        /* Keep original preview styles */
         font-style: normal;
         color: transparent;
         -webkit-text-stroke: 1.2px var(--cyan);
@@ -550,7 +530,6 @@
         font-weight: 700;
         display: inline-block;
         transition: all 0.3s ease;
-        /* Add edit indicator */
         border-radius: 4px;
         padding: 2px 6px;
       }
@@ -1030,26 +1009,6 @@
         max-width: 100%;
       }
 
-      /* ========== PROJECT CARD FLIP ========== */
-      /* .project-card {
-        perspective: 1000px;
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-        cursor: pointer;
-        height: 100%;
-        min-height: 440px;
-      }
-
-      .project-card-inner {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        min-height: 440px;
-        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        transform-style: preserve-3d;
-      } */
-
       .project-card.flipped .project-card-inner {
         transform: rotateY(180deg);
       }
@@ -1080,8 +1039,8 @@
       }
       .project-card-back {
         transform: rotateY(180deg);
-        transform-style: flat; /* ← ADD THIS */
-        -webkit-transform-style: flat; /* ← ADD THIS */
+        transform-style: flat;
+        -webkit-transform-style: flat;
         align-items: stretch;
         justify-content: flex-start;
         gap: 0.8rem;
@@ -1149,7 +1108,7 @@
       }
 
       .project-card-front {
-        position: relative; /* For absolute positioning of flip button */
+        position: relative;
       }
       .tag {
         font-family: var(--font-mono);
@@ -1336,15 +1295,6 @@
       }
 
       .availability {
-        /* display: inline-flex;
-        align-items: center;
-        gap: 0.6rem;
-        background: rgba(39, 201, 63, 0.08);
-        border: 1px solid rgba(39, 201, 63, 0.2);
-        padding: 0.6rem 1.2rem;
-        margin-top: 1.8rem;
-        max-width: 100%;
-        flex-wrap: nowrap; */
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1372,10 +1322,6 @@
       }
 
       .avail-text {
-        /* font-family: var(--font-mono);
-        font-size: 0.72rem;
-        color: #27c93f;
-        word-break: break-word; */
         font-family: var(--font-mono);
         font-size: 0.72rem;
         color: #27c93f;
@@ -1440,41 +1386,6 @@
           grid-template-columns: repeat(2, 1fr);
         }
       }
-
-      /* @media (min-width: 900px) {
-        .hero-grid {
-          grid-template-columns: 1fr 1fr;
-        }
-        .about-grid {
-          grid-template-columns: 1fr 1fr;
-        }
-        .projects-grid {
-          grid-template-columns: repeat(3, 1fr);
-        }
-        .contact-grid {
-          grid-template-columns: 1fr 1fr;
-        }
-        .timeline::before {
-          left: 20px;
-        }
-        .tl-item {
-          padding-left: 60px;
-        }
-        .tl-dot {
-          left: 13px;
-        }
-        .tl-header {
-          flex-wrap: nowrap;
-          align-items: center;
-          gap: 1rem;
-        }
-        .tl-period {
-          margin-top: 0;
-        }
-        .hero-name em {
-          white-space: nowrap;
-        }
-      } */
       .hero-grid {
         display: grid;
         grid-template-columns: 1fr;
@@ -1483,14 +1394,12 @@
         width: 100%;
       }
       @media (min-width: 900px) {
-        /* Hero grid - same as index.html */
         .editor-layout[data-view="master"] .hero-grid,
         .editor-layout[data-view="slave"] .hero-grid {
           grid-template-columns: 1fr 1fr;
           gap: 3rem;
           align-items: center;
         }
-        /* Split pane: keep single column (narrow panes) */
         .editor-layout[data-view="split"] .hero-grid {
           grid-template-columns: 1fr;
         }
@@ -1632,7 +1541,6 @@
         display: block;
       }
 
-      /* Pane labels */
       .pane-label {
         display: inline-flex;
         align-items: center;
@@ -1900,7 +1808,6 @@
         background: var(--cyan);
         border: 1px solid rgba(0, 229, 255, 0.3);
       }
-      /* Hide admin controls until unlocked */
       .admin-only {
         display: none !important;
       }
@@ -1908,18 +1815,23 @@
       .admin-only.visible {
         display: flex !important;
       }
-.demo-only { display: none !important; }
-.demo-only.visible { display: inline-flex !important; }
+      .demo-only {
+        display: none !important;
+      }
+      .demo-only.visible {
+        display: inline-flex !important;
+      }
 
-.desktop-only { display: none !important; }
-@media (min-width: 769px) {
-  .desktop-only.visible,
-  button.desktop-only.visible {
-    display: inline-flex !important;
-  }
-}
+      .desktop-only {
+        display: none !important;
+      }
+      @media (min-width: 769px) {
+        .desktop-only.visible,
+        button.desktop-only.visible {
+          display: inline-flex !important;
+        }
+      }
 
-      /* For buttons that use inline-block */
       button.admin-only.visible,
       .topbar-save-btn.admin-only.visible {
         display: inline-flex !important;
@@ -2065,14 +1977,14 @@
         min-height: 440px;
         transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         transform-style: preserve-3d;
-        overflow: visible !important; /* ← ADD THIS */
+        overflow: visible !important;
         border-radius: var(--r);
       }
       .project-card-front,
       .project-card-back {
-        position: absolute !important; /* ← Make sure this is absolute */
-        top: 0; /* ← ADD THIS */
-        left: 0; /* ← ADD THIS */
+        position: absolute !important;
+        top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
         backface-visibility: hidden;
@@ -2248,7 +2160,6 @@
         }
         .hero-name .first-name {
           white-space: nowrap;
-          /* word-break: break-word; */
         }
         .hero-name em {
           display: block;
@@ -2258,6 +2169,11 @@
         .master-pane .hero-name em {
           display: block;
           white-space: nowrap;
+        }
+        /* --- MOBILE: hide Save & Publish button to reduce eye fatigue --- */
+        .topbar-save-btn.admin-only.desktop-only,
+        .topbar-save-btn.admin-only.desktop-only.visible {
+          display: none !important;
         }
       }
 
@@ -2273,7 +2189,6 @@
     <script src="config.js"></script>
   </head>
   <body>
-    <!-- <input type="text" /> -->
     <!-- LOGIN GATE -->
     <div class="login-gate" id="loginGate">
       <h2><i class="fas fa-lock"></i> Editor Access</h2>
@@ -2335,12 +2250,12 @@
           <i class="fas fa-sun" id="themeIcon"></i>
         </button>
         <button onclick="saveAndPublish()" class="topbar-save-btn admin-only desktop-only">
-  <i class="fas fa-cloud-upload-alt"></i><span>Save & Publish</span>
-</button>
-<button onclick="demoSave()" class="topbar-save-btn demo-only desktop-only">
-  <i class="fas fa-save"></i><span>Save</span>
-</button>
-        
+          <i class="fas fa-cloud-upload-alt"></i><span>Save & Publish</span>
+        </button>
+        <button onclick="demoSave()" class="topbar-save-btn demo-only desktop-only">
+          <i class="fas fa-save"></i><span>Save</span>
+        </button>
+
         <span class="settings-wrapper">
           <button
             class="settings-toggle"
@@ -2371,8 +2286,6 @@
             >
               <i class="fas fa-save"></i> Save All Changes
             </button>
-            <!-- ...... -->
-            <!-- Save & Publish -->
             <button
               class="admin-only"
               onclick="
@@ -2406,8 +2319,6 @@
             >
               <i class="fas fa-download"></i> Export JSON Backup
             </button>
-            <!-- ...... -->
-            <!-- Reset All  -->
             <button
               class="admin-only"
               onclick="
@@ -2626,15 +2537,13 @@
     <div class="toast" id="toast"></div>
 
     <script>
-      // Password for editor access (CHANGE THIS!)
-      // Password hash (generated from your password - safe to expose)
       const PASSWORD_HASH =
         "826d3c256beee738bdd1267d6cf9f07a1aa3f4c4514153b077e346b71b567f8e";
-    function demoSave() {
-  syncFromDOM();
-  saveToStorage();
-  showToast("💾 Demo saved — changes cleared on refresh", "info");
-}
+      function demoSave() {
+        syncFromDOM();
+        saveToStorage();
+        showToast("💾 Demo saved — changes cleared on refresh", "info");
+      }
       function enterDemoMode() {
         document.getElementById("loginGate").classList.add("hidden");
         setTimeout(
@@ -2668,18 +2577,21 @@
         document.querySelectorAll(".admin-only").forEach((el) => {
           el.classList.add("visible");
         });
-        document.querySelectorAll(".demo-only").forEach(el => el.classList.remove("visible"));
+        document
+          .querySelectorAll(".demo-only")
+          .forEach((el) => el.classList.remove("visible"));
       }
       document.addEventListener("DOMContentLoaded", () => {
         if (localStorage.getItem("editor_unlocked") === "true") {
           const gate = document.getElementById("loginGate");
           if (gate) gate.classList.add("hidden");
-          setTimeout(showAdminControls, 100); // Wait for DOM to render
-         
-} 
-    if (localStorage.getItem("editor_unlocked") !== "true") {
-  document.querySelectorAll(".demo-only").forEach(el => el.classList.add("visible"));    }
-        // If NOT unlocked, admin buttons stay hidden — demo mode active
+          setTimeout(showAdminControls, 100);
+        }
+        if (localStorage.getItem("editor_unlocked") !== "true") {
+          document
+            .querySelectorAll(".demo-only")
+            .forEach((el) => el.classList.add("visible"));
+        }
       });
 
       const defaultState = {
@@ -2866,7 +2778,6 @@
           state.jobStatus = pendingStatus;
           renderAll();
 
-          // Update contact intro text in master pane
           const masterIntro = document.querySelector(
             "#masterContent .contact-intro",
           );
@@ -2877,7 +2788,6 @@
                 : "I'm currently employed but always open to exciting opportunities. Whether you have a project, collaboration idea, or just want to connect — don't hesitate to reach out.";
           }
 
-          // Update contact intro text in slave pane
           const slaveIntro = document.querySelector(
             "#slaveContent .contact-intro",
           );
@@ -2946,37 +2856,87 @@
         renderAll();
         showToast("✓ All changes saved successfully", "success");
       }
+
+      async function fetchFromGitHub() {
+        const TOKEN =
+          typeof config !== "undefined" && config.Github_Token
+            ? config.Github_Token
+            : null;
+        const OWNER = "Mr-Atanepes";
+        const REPO = "Atanepes-Gochmyradov";
+        const PATH = "data.json";
+        const timestamp = Date.now();
+        const apiUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}?t=${timestamp}`;
+
+        try {
+          const headers = {
+            Accept: "application/vnd.github.v3+json",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+          };
+          if (TOKEN) headers.Authorization = `token ${TOKEN}`;
+
+          const res = await fetch(apiUrl, { headers });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          const content = atob(data.content);
+          const parsed = JSON.parse(content);
+          const merged = { ...defaultState, ...parsed };
+          if (!merged.projects?.length)
+            merged.projects = [...defaultState.projects];
+          merged.projects = merged.projects.map((p) => ({
+            ...p,
+            id: p.id || Date.now() + Math.random(),
+          }));
+          state = merged;
+          saveToStorage();
+          renderAll();
+          showToast("✓ Synced with GitHub", "success");
+        } catch (e) {
+          console.warn("GitHub fetch failed, using localStorage/default", e);
+          loadFromStorage();
+          renderAll();
+          showToast("⚠️ Using local data (GitHub unavailable)", "info");
+        }
+      }
+
       async function autoPushToGitHub() {
         syncFromDOM();
         saveToStorage();
 
-        const TOKEN = config.Github_Token;
+        const TOKEN =
+          typeof config !== "undefined" && config.Github_Token
+            ? config.Github_Token
+            : null;
         const OWNER = "Mr-Atanepes";
         const REPO = "Atanepes-Gochmyradov";
         const PATH = "data.json";
+        const timestamp = Date.now();
+        const apiUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}?t=${timestamp}`;
 
         const content = btoa(
           unescape(encodeURIComponent(JSON.stringify(state, null, 2))),
         );
-        const apiUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`;
 
         try {
-          const getRes = await fetch(apiUrl, {
-            headers: {
-              Authorization: `token ${TOKEN}`,
-              Accept: "application/vnd.github.v3+json",
-            },
-          });
+          const headers = {
+            Accept: "application/vnd.github.v3+json",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+          };
+          if (TOKEN) headers.Authorization = `token ${TOKEN}`;
 
+          const getRes = await fetch(apiUrl, { headers });
           if (!getRes.ok) throw new Error("Failed to fetch file info");
           const getData = await getRes.json();
 
           const putRes = await fetch(apiUrl, {
             method: "PUT",
             headers: {
-              Authorization: `token ${TOKEN}`,
+              ...headers,
               "Content-Type": "application/json",
-              Accept: "application/vnd.github.v3+json",
             },
             body: JSON.stringify({
               message: "Update portfolio data",
@@ -2986,10 +2946,7 @@
           });
 
           if (putRes.ok) {
-            showToast(
-              "✓ Published to GitHub — live in 1-2 minutes!",
-              "success",
-            );
+            showToast("✓ Published to GitHub — live in 1-2 minutes!", "success");
           } else {
             const errData = await putRes.json();
             showToast("⚠️ Push failed: " + errData.message, "error");
@@ -3084,7 +3041,6 @@
                   ? '<span class="tag">🌱 WIP</span>'
                   : "";
 
-            // FRONT FACE
             const frontFace = `
             <div class="project-card-front" style="position:relative;">
               <div class="project-number">${num}</div>
@@ -3101,7 +3057,6 @@
               ><i class="fas fa-sync-alt"></i></button>
             </div>`;
 
-            // BACK FACE — master: URL inputs
             const masterBackFace = `
             <div class="project-card-back" style="position:relative;">
               <button class="flip-btn"
@@ -3148,7 +3103,6 @@
               </div>
             </div>`;
 
-            // BACK FACE — slave/preview: link buttons
             const previewBackFace = `
             <div class="project-card-back" style="position:relative;">
               <button class="flip-btn"
@@ -3221,7 +3175,6 @@
         document.getElementById("slaveContent").innerHTML = generateHTML(false);
         renderLayers();
 
-        // Keep card flipped after save
         if (flippedCardId !== null) {
           document
             .querySelectorAll("#masterContent .project-card")
@@ -3247,7 +3200,6 @@
           100,
         );
       }
-      // Save project URLs and re-render
       function saveProjectUrls(id) {
         flippedCardId = id;
         saveToStorage();
@@ -3274,9 +3226,8 @@
       }
       function selectProject(id) {
         selectedProjectId = selectedProjectId === id ? null : id;
-        renderLayers(); // Only update sidebar highlight, not the entire page
+        renderLayers();
 
-        // Scroll to the project in master pane
         const projectCard = document.querySelector(
           `#masterContent .project-card:nth-child(${state.projects.findIndex((p) => p.id === id) + 1})`,
         );
@@ -3390,6 +3341,8 @@
         document.getElementById("themeIcon").className =
           savedTheme === "dark" ? "fas fa-moon" : "fas fa-sun";
         renderAll();
+        fetchFromGitHub();
+
         document
           .querySelectorAll(".mode-pill")
           .forEach((b) =>
@@ -3434,7 +3387,7 @@
               toast.classList.remove("show");
             }, 5000);
           }
-        }); // ← Close input listener HERE
+        });
 
         masterContent.addEventListener("keyup", function (e) {
           const el = e.target;
@@ -3445,7 +3398,6 @@
             const fieldName = el.getAttribute("data-field");
             const newValue = el.innerText;
 
-            // Update the matching element in the slave pane
             const slaveEl = document.querySelector(
               `#slaveContent [data-field="${fieldName}"]`,
             );
@@ -3453,7 +3405,6 @@
               slaveEl.textContent = newValue;
             }
 
-            // Also update state for consistency
             if (fieldName in state) {
               state[fieldName] = newValue;
             }
