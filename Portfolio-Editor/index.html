@@ -1885,7 +1885,7 @@
         padding: 3px;
       }
 
-      /* Custom mobile toggle - hidden by default, shown on mobile */
+      /* ===== CUSTOM MOBILE TOGGLE ===== */
       .mobile-toggle {
         display: none;
         background: rgba(255, 255, 255, 0.08);
@@ -2042,7 +2042,14 @@
         .settings-toggle {
           display: flex;
         }
-        .topbar-save-btn:not(.admin-only.visible) {
+        /* Hide Save & Publish button on mobile — it's inside the gear menu */
+        .topbar-save-btn.admin-only.desktop-only,
+        .topbar-save-btn.admin-only.desktop-only.visible {
+          display: none !important;
+        }
+        /* Also hide the demo save button on mobile */
+        .topbar-save-btn.demo-only.desktop-only,
+        .topbar-save-btn.demo-only.desktop-only.visible {
           display: none !important;
         }
 
@@ -2174,11 +2181,6 @@
           display: block;
           white-space: nowrap;
         }
-        /* --- MOBILE: hide Save & Publish button to reduce eye fatigue --- */
-        .topbar-save-btn.admin-only.desktop-only,
-        .topbar-save-btn.admin-only.desktop-only.visible {
-          display: none !important;
-        }
       }
 
       @media (min-width: 769px) {
@@ -2221,6 +2223,8 @@
         <i class="fas fa-eye"></i> Try Demo
       </button>
     </div>
+
+    <!-- ===== EDITOR TOPBAR ===== -->
     <div class="editor-topbar">
       <div class="topbar-left">
         <span
@@ -2253,6 +2257,8 @@
         >
           <i class="fas fa-sun" id="themeIcon"></i>
         </button>
+
+        <!-- Save & Publish – hidden on mobile via CSS (desktop-only) -->
         <button onclick="saveAndPublish()" class="topbar-save-btn admin-only desktop-only">
           <i class="fas fa-cloud-upload-alt"></i><span>Save & Publish</span>
         </button>
@@ -2260,7 +2266,7 @@
           <i class="fas fa-save"></i><span>Save</span>
         </button>
 
-        <!-- Custom mobile toggle: Edit / Preview -->
+        <!-- ===== CUSTOM MOBILE TOGGLE: Edit / Preview ===== -->
         <div class="mobile-toggle" id="mobileToggle">
           <button class="active" data-view="master">Edit</button>
           <button data-view="slave">Preview</button>
@@ -2409,6 +2415,7 @@
       </aside>
     </div>
 
+    <!-- ===== MODALS ===== -->
     <div class="modal-overlay" id="statusModal">
       <div class="modal">
         <h2 style="margin-bottom: 20px">Update Job Status</h2>
@@ -2999,11 +3006,13 @@
         }
       }
 
-      // ========== NEW: Background Sync ==========
+      // ================================================================
+      // 1. ANTI-CORS BACKGROUND SYNC ENGINE (runs every 8 seconds)
+      // ================================================================
       let lastFetchedContent = null;
 
       async function backgroundSync() {
-        // Safety gate: skip if user is typing in an input/textarea/contenteditable
+        // 2. ACTIVE ELEMENT SAFETY LOCK — pause if user is typing
         const active = document.activeElement;
         if (
           active &&
@@ -3011,37 +3020,42 @@
             active.tagName === "TEXTAREA" ||
             active.getAttribute("contenteditable") === "true")
         ) {
-          return;
+          return; // pause sync to avoid wiping user's half‑typed text
         }
 
         const OWNER = "Mr-Atanepes";
         const REPO = "Atanepes-Gochmyradov";
         const PATH = "data.json";
         const timestamp = Date.now();
-        const rawUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${PATH}?t=${timestamp}`;
+
+        // Official GitHub API endpoint with cache‑busting timestamp
+        const apiUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}?t=${timestamp}`;
 
         try {
-          const response = await fetch(rawUrl, {
+          const response = await fetch(apiUrl, {
             headers: {
+              // Anti‑CORS: raw+json media type
+              "Accept": "application/vnd.github.v3.raw+json",
               "Cache-Control": "no-cache, no-store, must-revalidate",
               Pragma: "no-cache",
               Expires: "0",
             },
           });
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const fetchedText = await response.text();
 
-          // Compare with current state (stringified)
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+          // With raw+json, the response body is the raw file content (JSON string)
+          const fetchedText = await response.text();
           const currentStateStr = JSON.stringify(state);
+
           if (fetchedText === currentStateStr) {
-            // No change, but update last fetched for future comparisons
+            // No change — update last known content and exit
             lastFetchedContent = fetchedText;
             return;
           }
 
-          // Overwrite state with remote data
+          // Remote data changed → parse and merge
           const fetchedData = JSON.parse(fetchedText);
-          // Merge with default to ensure all fields exist
           const merged = { ...defaultState, ...fetchedData };
           if (!merged.projects?.length)
             merged.projects = [...defaultState.projects];
@@ -3049,16 +3063,18 @@
             ...p,
             id: p.id || Date.now() + Math.random(),
           }));
+
+          // Assign to global state, persist, and re‑render everything
           state = merged;
           saveToStorage();
-          renderAll();
+          renderAll(); // updates both Editor inputs and Preview components
           showToast("🔄 Auto-synced with GitHub remote changes", "info");
           lastFetchedContent = fetchedText;
         } catch (e) {
           console.warn("Background sync failed:", e);
         }
       }
-      // =========================================
+      // ================================================================
 
       function generateHTML(isMaster) {
         const attr = (f) =>
@@ -3354,7 +3370,7 @@
           .forEach((b) =>
             b.classList.toggle("active", b.getAttribute("data-view") === m),
           );
-        // update mobile toggle
+        // update mobile toggle (custom buttons)
         const toggle = document.getElementById("mobileToggle");
         if (toggle) {
           toggle.querySelectorAll("button").forEach((btn) => {
@@ -3424,7 +3440,7 @@
             ),
           );
 
-        // Mobile toggle buttons
+        // ===== Custom mobile toggle: Edit / Preview =====
         document
           .querySelectorAll("#mobileToggle button")
           .forEach((btn) =>
@@ -3500,11 +3516,12 @@
           }
         });
 
-        // ========== START BACKGROUND SYNC ==========
-        // Run once immediately, then every 10 seconds
-        setTimeout(backgroundSync, 2000); // wait a bit after load
-        setInterval(backgroundSync, 10000);
-        // ==========================================
+        // ================================================================
+        // START BACKGROUND SYNC — every 8 seconds
+        // ================================================================
+        setTimeout(backgroundSync, 2000);
+        setInterval(backgroundSync, 8000); // ← 8 seconds as required
+        // ================================================================
       });
     </script>
   </body>
