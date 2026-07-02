@@ -2998,6 +2998,68 @@
           showToast("✓ Reset to default values", "info");
         }
       }
+
+      // ========== NEW: Background Sync ==========
+      let lastFetchedContent = null;
+
+      async function backgroundSync() {
+        // Safety gate: skip if user is typing in an input/textarea/contenteditable
+        const active = document.activeElement;
+        if (
+          active &&
+          (active.tagName === "INPUT" ||
+            active.tagName === "TEXTAREA" ||
+            active.getAttribute("contenteditable") === "true")
+        ) {
+          return;
+        }
+
+        const OWNER = "Mr-Atanepes";
+        const REPO = "Atanepes-Gochmyradov";
+        const PATH = "data.json";
+        const timestamp = Date.now();
+        const rawUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${PATH}?t=${timestamp}`;
+
+        try {
+          const response = await fetch(rawUrl, {
+            headers: {
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              Pragma: "no-cache",
+              Expires: "0",
+            },
+          });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const fetchedText = await response.text();
+
+          // Compare with current state (stringified)
+          const currentStateStr = JSON.stringify(state);
+          if (fetchedText === currentStateStr) {
+            // No change, but update last fetched for future comparisons
+            lastFetchedContent = fetchedText;
+            return;
+          }
+
+          // Overwrite state with remote data
+          const fetchedData = JSON.parse(fetchedText);
+          // Merge with default to ensure all fields exist
+          const merged = { ...defaultState, ...fetchedData };
+          if (!merged.projects?.length)
+            merged.projects = [...defaultState.projects];
+          merged.projects = merged.projects.map((p) => ({
+            ...p,
+            id: p.id || Date.now() + Math.random(),
+          }));
+          state = merged;
+          saveToStorage();
+          renderAll();
+          showToast("🔄 Auto-synced with GitHub remote changes", "info");
+          lastFetchedContent = fetchedText;
+        } catch (e) {
+          console.warn("Background sync failed:", e);
+        }
+      }
+      // =========================================
+
       function generateHTML(isMaster) {
         const attr = (f) =>
           isMaster
@@ -3437,6 +3499,12 @@
             settingsDropdown.classList.remove("open");
           }
         });
+
+        // ========== START BACKGROUND SYNC ==========
+        // Run once immediately, then every 10 seconds
+        setTimeout(backgroundSync, 2000); // wait a bit after load
+        setInterval(backgroundSync, 10000);
+        // ==========================================
       });
     </script>
   </body>
