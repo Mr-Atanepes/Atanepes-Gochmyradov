@@ -1885,8 +1885,31 @@
         padding: 3px;
       }
 
-      .mobile-mode-select {
+      /* Custom mobile toggle - hidden by default, shown on mobile */
+      .mobile-toggle {
         display: none;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 3px;
+        gap: 3px;
+        flex-shrink: 0;
+      }
+      .mobile-toggle button {
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-family: var(--font-mono);
+        white-space: nowrap;
+        cursor: pointer;
+        transition: all 0.2s;
+        line-height: 1.4;
+      }
+      .mobile-toggle button.active {
+        background: var(--cyan);
+        color: #000;
       }
 
       .settings-wrapper {
@@ -2010,8 +2033,8 @@
         .desktop-mode-pills {
           display: none;
         }
-        .mobile-mode-select {
-          display: block;
+        .mobile-toggle {
+          display: flex;
         }
         .menu-toggle {
           display: block;
@@ -2040,25 +2063,6 @@
 
         .topbar-logo {
           font-size: 13px;
-        }
-
-        .mobile-mode-select select {
-          background: rgba(255, 255, 255, 0.08);
-          border: none;
-          border-radius: 8px;
-          padding: 6px 10px;
-          color: var(--white);
-          font-family: var(--font-mono);
-          font-size: 11px;
-          cursor: pointer;
-          -webkit-appearance: none;
-          appearance: none;
-          max-width: 120px;
-        }
-
-        .mobile-mode-select select option {
-          background: var(--bg2);
-          color: var(--white);
         }
 
         .settings-toggle,
@@ -2256,6 +2260,12 @@
           <i class="fas fa-save"></i><span>Save</span>
         </button>
 
+        <!-- Custom mobile toggle: Edit / Preview -->
+        <div class="mobile-toggle" id="mobileToggle">
+          <button class="active" data-view="master">Edit</button>
+          <button data-view="slave">Preview</button>
+        </div>
+
         <span class="settings-wrapper">
           <button
             class="settings-toggle"
@@ -2332,12 +2342,6 @@
             </button>
           </div>
         </span>
-        <div class="mobile-mode-select">
-          <select id="mobileViewSelect">
-            <option value="master">Master (Edit)</option>
-            <option value="slave">Preview</option>
-          </select>
-        </div>
         <button class="menu-toggle" id="menuToggle">
           <i class="fas fa-bars"></i>
         </button>
@@ -3282,13 +3286,19 @@
       }
       function setView(m) {
         document.getElementById("editorLayout").setAttribute("data-view", m);
+        // update desktop pills
         document
           .querySelectorAll(".mode-pill")
           .forEach((b) =>
             b.classList.toggle("active", b.getAttribute("data-view") === m),
           );
-        const ms = document.getElementById("mobileViewSelect");
-        if (ms) ms.value = m === "split" ? "master" : m;
+        // update mobile toggle
+        const toggle = document.getElementById("mobileToggle");
+        if (toggle) {
+          toggle.querySelectorAll("button").forEach((btn) => {
+            btn.classList.toggle("active", btn.getAttribute("data-view") === m);
+          });
+        }
         closeSidebar();
       }
       function scrollToSection(id) {
@@ -3343,6 +3353,7 @@
         renderAll();
         fetchFromGitHub();
 
+        // Desktop mode pills
         document
           .querySelectorAll(".mode-pill")
           .forEach((b) =>
@@ -3350,28 +3361,29 @@
               setView(b.getAttribute("data-view")),
             ),
           );
+
+        // Mobile toggle buttons
+        document
+          .querySelectorAll("#mobileToggle button")
+          .forEach((btn) =>
+            btn.addEventListener("click", () =>
+              setView(btn.getAttribute("data-view")),
+            ),
+          );
+
         document
           .getElementById("menuToggle")
           .addEventListener("click", openSidebar);
         document
           .getElementById("sidebarOverlay")
           .addEventListener("click", closeSidebar);
-        const ms = document.getElementById("mobileViewSelect");
-        if (ms) ms.addEventListener("change", (e) => setView(e.target.value));
         window.addEventListener("resize", () => {
           if (window.innerWidth > 768) closeSidebar();
         });
         if (window.innerWidth <= 768) {
           setView("master");
-          document
-            .querySelectorAll(".mode-pill")
-            .forEach((b) =>
-              b.classList.toggle(
-                "active",
-                b.getAttribute("data-view") === "master",
-              ),
-            );
         }
+
         const masterContent = document.getElementById("masterContent");
         masterContent.addEventListener("input", function (e) {
           const el = e.target;
