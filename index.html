@@ -1,4 +1,4 @@
-<!doctype html>
+<!Doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -2166,6 +2166,33 @@
           t._timer = setTimeout(() => t.classList.remove("show"), 4000);
         }
 
+        // --- Periodic fetch with cache-busting ---
+        let lastFetchedStateStr = null;
+
+        async function fetchUpdates() {
+          try {
+            const url = "data.json?t=" + new Date().getTime();
+            const res = await fetch(url, {
+              headers: { "Cache-Control": "no-cache" },
+            });
+            if (!res.ok) return;
+            const newData = await res.json();
+            const newState = { ...defaultState, ...newData };
+            if (!newState.projects?.length)
+              newState.projects = [...defaultState.projects];
+            const newStr = JSON.stringify(newState);
+            const currentStr = JSON.stringify(state);
+            if (newStr !== currentStr) {
+              state = newState;
+              // re-render everything
+              renderAll();
+              showUpdateToast("🔄 Data updated");
+            }
+          } catch (e) {
+            console.warn("Periodic fetch failed", e);
+          }
+        }
+
         async function renderAll() {
           await loadState();
           const avail = state.jobStatus === "available";
@@ -2397,8 +2424,6 @@
             if (dot) dot.style.background = "#ff6b6b";
           }
 
-          // Update contact intro based on job status
-
           document
             .getElementById("availabilityText")
             .setAttribute("data-translate", "availability");
@@ -2413,7 +2438,6 @@
               });
             applyLanguage(currentLang);
 
-            // Update contact intro AFTER applyLanguage (so it doesn't get overwritten)
             const contactIntro = document.getElementById("contactIntro");
             if (contactIntro) {
               if (state.jobStatus === "available") {
@@ -2548,7 +2572,11 @@
           }
         });
 
-        renderAll();
+        // Initial render
+        renderAll().then(() => {
+          // Start periodic updates every 30 seconds
+          setInterval(fetchUpdates, 30000);
+        });
       })();
     </script>
   </body>
