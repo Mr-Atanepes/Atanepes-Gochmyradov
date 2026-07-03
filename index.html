@@ -2195,28 +2195,31 @@
         }
 
         // ── POLLING: fetch fresh data, compare with tracked string ──
-        async function pollForUpdates() {
-          try {
-            const fresh = await fetchDataJson();
-            const merged = { ...defaultState, ...fresh };
-            if (!merged.projects?.length)
-              merged.projects = [...defaultState.projects];
-            const newStr = JSON.stringify(merged);
+       async function pollForUpdates() {
+  try {
+    const fresh = await fetchDataJson();
+    const merged = { ...defaultState, ...fresh };
+    if (!merged.projects?.length)
+      merged.projects = [...defaultState.projects];
+    const newStr = JSON.stringify(merged);
 
-            // Only re-render if the data actually changed
-            if (newStr !== lastFetchedStateStr) {
-              lastFetchedStateStr = newStr;
-              state = merged;
-              // persist to localStorage
-              localStorage.setItem("portfolioState", JSON.stringify(state));
-              // re-render the entire UI
-              renderAll();
-              showUpdateToast("🔄 Data updated — latest changes applied");
-            }
-          } catch (e) {
-            // silent fail — no need to spam console
-          }
-        }
+    // ✅ NEW: Get timestamps to prevent overwriting
+    const localTime = parseInt(localStorage.getItem('portfolioLastUpdated')) || 0;
+    const remoteTime = parseInt(localStorage.getItem('portfolioRemoteUpdated')) || 0;
+
+    // ✅ NEW: Only update if remote data is newer
+    if (newStr !== lastFetchedStateStr && remoteTime > localTime) {
+      lastFetchedStateStr = newStr;
+      state = merged;
+      localStorage.setItem('portfolioState', JSON.stringify(state));
+      localStorage.setItem('portfolioRemoteUpdated', String(Date.now()));
+      renderAll();
+      showUpdateToast('🔄 Data updated — latest changes applied');
+    }
+  } catch (e) {
+    // silent fail
+  }
+}
 
         // ── render all DOM elements from state ──
         function renderAll() {
