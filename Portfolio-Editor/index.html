@@ -2191,6 +2191,27 @@
           display: none !important;
         }
       }
+      /* Token Modal Styles */
+#tokenModal .modal {
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+}
+
+#tokenModal .modal input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.2);
+  outline: none;
+}
+
+#tokenModal .modal code {
+  background: var(--bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--gold);
+}
     </style>
     <!-- <script src="config.js"></script> -->
   </head>
@@ -2223,7 +2244,58 @@
         <i class="fas fa-eye"></i> Try Demo
       </button>
     </div>
-
+<!-- ===== TOKEN MODAL ===== -->
+<div class="modal-overlay" id="tokenModal">
+  <div class="modal" style="max-width: 500px;">
+    <h2 style="margin-bottom: 16px; color: var(--cyan);">
+      <i class="fas fa-key"></i> GitHub Token Required
+    </h2>
+    
+    <div style="background: rgba(255, 200, 0, 0.1); border: 1px solid rgba(255, 200, 0, 0.3); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+      <p style="font-size: 13px; color: var(--gold); margin: 0;">
+        <i class="fas fa-shield-alt"></i> 
+        <strong>SECURITY NOTICE:</strong>
+      </p>
+      <ul style="font-size: 12px; color: var(--muted); margin: 8px 0 0 20px; padding: 0;">
+        <li>Token stored temporarily in memory</li>
+        <li>Cleared when you close this tab</li>
+        <li>Expires in 1 hour</li>
+        <li>Never share this token</li>
+      </ul>
+    </div>
+    
+    <div style="margin-bottom: 16px;">
+      <label style="font-size: 13px; color: var(--white); display: block; margin-bottom: 6px;">
+        <i class="fab fa-github"></i> Personal Access Token
+      </label>
+      <input 
+        type="password" 
+        id="tokenInput" 
+        placeholder="github_pat_xxxxxxxxxxxxxxxxxxxxx" 
+        style="width: 100%; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--white); font-family: var(--font-mono); font-size: 13px;"
+      />
+      <div style="font-size: 11px; color: var(--muted); margin-top: 4px;">
+        Get token from: <a href="https://github.com/settings/tokens" target="_blank" style="color: var(--cyan);">GitHub Settings → Tokens</a>
+        <span style="display: block; margin-top: 2px;">Required scopes: <code style="background: var(--bg); padding: 2px 6px; border-radius: 4px;">repo</code></span>
+      </div>
+    </div>
+    
+    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+      <button 
+        onclick="closeTokenModal()" 
+        style="padding: 8px 16px; background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; cursor: pointer;"
+      >
+        Skip
+      </button>
+      <button 
+        onclick="saveTokenFromModal()" 
+        style="padding: 8px 16px; background: var(--cyan); color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;"
+      >
+        <i class="fas fa-save"></i> Save Token
+      </button>
+    </div>
+  </div>
+</div>
     <!-- ===== EDITOR TOPBAR ===== -->
     <div class="editor-topbar">
       <div class="topbar-left">
@@ -2563,7 +2635,7 @@
   console.log('✅ CONFIG loaded with RAW_URL:', CONFIG.RAW_URL);
 
   // ================================================================
-  // ENTERPRISE-GRADE TOKEN MANAGEMENT
+  // SECURE TOKEN MANAGEMENT (with Custom Modal)
   // ================================================================
   let GITHUB_TOKEN = null;
   let TOKEN_EXPIRY = 0;
@@ -2642,31 +2714,97 @@
     }
   }
 
+  // ================================================================
+  // CUSTOM TOKEN MODAL (replaces prompt)
+  // ================================================================
+
+  let tokenModalResolve = null;
+  let tokenModalReject = null;
+
+  function showTokenModal() {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('tokenModal');
+      const input = document.getElementById('tokenInput');
+      
+      // Clear previous input
+      input.value = '';
+      
+      // Remove error state if present
+      input.classList.remove('error');
+      input.style.borderColor = '';
+      input.placeholder = 'github_pat_xxxxxxxxxxxxxxxxxxxxx';
+      
+      // Show modal
+      modal.classList.add('open');
+      
+      // Focus input
+      setTimeout(() => input.focus(), 100);
+      
+      // Store resolve function
+      tokenModalResolve = (value) => {
+        modal.classList.remove('open');
+        resolve(value);
+      };
+      
+      // Handle Enter key
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+          saveTokenFromModal();
+        }
+      };
+    });
+  }
+
+  function closeTokenModal() {
+    if (tokenModalResolve) {
+      tokenModalResolve(null);
+      tokenModalResolve = null;
+    }
+    document.getElementById('tokenModal').classList.remove('open');
+  }
+
+  function saveTokenFromModal() {
+    const input = document.getElementById('tokenInput');
+    const token = input.value.trim();
+    
+    if (token && token.length > 10 && isValidToken(token)) {
+      if (tokenModalResolve) {
+        tokenModalResolve(token);
+        tokenModalResolve = null;
+      }
+      document.getElementById('tokenModal').classList.remove('open');
+    } else {
+      // Show error inside modal
+      input.classList.add('error');
+      input.style.borderColor = '#ff6b6b';
+      input.placeholder = '❌ Invalid token (must start with ghp_ or github_pat_)';
+      setTimeout(() => {
+        input.classList.remove('error');
+        input.style.borderColor = '';
+        input.placeholder = 'github_pat_xxxxxxxxxxxxxxxxxxxxx';
+      }, 3000);
+    }
+  }
+
   async function getGitHubToken() {
+    // Check memory
     if (GITHUB_TOKEN && TOKEN_EXPIRY > Date.now()) {
       return GITHUB_TOKEN;
     }
     
+    // Check session storage
     const token = loadTokenSecurely();
     if (token && isValidToken(token)) {
       return token;
     }
     
+    // Check if user has been prompted
     if (sessionStorage.getItem('token_prompted') === 'true') {
       return null;
     }
     
-    const input = prompt(
-      '🔑 Enter GitHub Personal Access Token\n\n' +
-      '⚠️ SECURITY NOTICE:\n' +
-      '• Token will be stored temporarily in memory\n' +
-      '• Cleared when you close this tab\n' +
-      '• Expires in 1 hour\n' +
-      '• Never share this token\n\n' +
-      'Get token from: https://github.com/settings/tokens\n' +
-      'Required scopes: repo\n\n' +
-      '(Leave blank to skip)'
-    );
+    // Show custom modal instead of prompt
+    const input = await showTokenModal();
     
     sessionStorage.setItem('token_prompted', 'true');
     
@@ -2686,19 +2824,14 @@
   }
 
   function addTokenManually() {
-    const input = prompt(
-      '🔑 Enter GitHub Personal Access Token\n\n' +
-      'Get token from: https://github.com/settings/tokens\n' +
-      'Required scopes: repo'
-    );
-    
-    if (input && input.length > 10 && isValidToken(input)) {
-      storeTokenSecurely(input);
-      showToast('✅ Token saved securely (expires in 1 hour)', 'success');
+    // Reuse the modal
+    showTokenModal().then((token) => {
+      if (token && isValidToken(token)) {
+        storeTokenSecurely(token);
+        showToast('✅ Token saved securely (expires in 1 hour)', 'success');
+      }
       document.getElementById('settingsDropdown').classList.remove('open');
-    } else {
-      showToast('⚠️ Invalid token (must start with ghp_ or github_pat_)', 'error');
-    }
+    });
   }
 
   function showTokenStatus() {
@@ -3660,5 +3793,6 @@
   });
 
   console.log('📄 Script loaded successfully');
-</script>  </body>
+</script>
+  </body>
 </html>
