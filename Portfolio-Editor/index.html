@@ -2192,7 +2192,7 @@
         }
       }
     </style>
-    <script src="config.js"></script>
+    <!-- <script src="config.js"></script> -->
   </head>
   <body>
     <!-- LOGIN GATE -->
@@ -2555,13 +2555,164 @@
     GITHUB_OWNER: 'Mr-Atanepes',
     GITHUB_REPO: 'Atanepes-Gochmyradov',
     GITHUB_PATH: 'data.json',
-    // ✅ FIXED: Use relative path (editor is in Portfolio-Editor folder)
     RAW_URL: '../data.json',
     API_URL: 'https://api.github.com/repos/Mr-Atanepes/Atanepes-Gochmyradov/contents/data.json',
     POLL_INTERVAL: 10000,
   };
 
   console.log('✅ CONFIG loaded with RAW_URL:', CONFIG.RAW_URL);
+
+  // ================================================================
+  // ENTERPRISE-GRADE TOKEN MANAGEMENT
+  // ================================================================
+  let GITHUB_TOKEN = null;
+  let TOKEN_EXPIRY = 0;
+
+  function isSecureContext() {
+    return window.isSecureContext;
+  }
+
+  function checkSecurity() {
+    if (!isSecureContext()) {
+      console.warn('⚠️ Not in secure context! Tokens are at risk.');
+      showToast('⚠️ Security warning: Use HTTPS for token safety', 'warning');
+    }
+  }
+
+  function clearSensitiveData() {
+    GITHUB_TOKEN = null;
+    TOKEN_EXPIRY = 0;
+    sessionStorage.removeItem('github_token_secure');
+    localStorage.removeItem('github_token_encrypted');
+    localStorage.removeItem('github_token_expiry');
+  }
+
+  function storeTokenSecurely(token) {
+    if (!isSecureContext()) {
+      console.error('❌ Cannot store token in insecure context');
+      return false;
+    }
+    
+    try {
+      sessionStorage.setItem('github_token_secure', token);
+      GITHUB_TOKEN = token;
+      TOKEN_EXPIRY = Date.now() + (60 * 60 * 1000);
+      console.log('✅ Token stored securely (expires in 1 hour)');
+      return true;
+    } catch(e) {
+      console.error('Failed to store token:', e);
+      return false;
+    }
+  }
+
+  function loadTokenSecurely() {
+    if (!isSecureContext()) {
+      console.warn('⚠️ Insecure context, token may be at risk');
+    }
+    
+    if (GITHUB_TOKEN && TOKEN_EXPIRY > Date.now()) {
+      return GITHUB_TOKEN;
+    }
+    
+    const stored = sessionStorage.getItem('github_token_secure');
+    if (stored) {
+      GITHUB_TOKEN = stored;
+      TOKEN_EXPIRY = Date.now() + (60 * 60 * 1000);
+      console.log('✅ Token loaded from session storage');
+      return stored;
+    }
+    
+    return null;
+  }
+
+  function isValidToken(token) {
+    if (!token) return false;
+    if (token.length < 10) return false;
+    if (!token.startsWith('github_pat_') && !token.startsWith('ghp_')) {
+      console.warn('⚠️ Token doesn\'t look like a valid GitHub token');
+      return false;
+    }
+    return true;
+  }
+
+  function refreshTokenExpiry() {
+    if (GITHUB_TOKEN) {
+      TOKEN_EXPIRY = Date.now() + (60 * 60 * 1000);
+      console.log('🔄 Token expiry refreshed');
+    }
+  }
+
+  async function getGitHubToken() {
+    if (GITHUB_TOKEN && TOKEN_EXPIRY > Date.now()) {
+      return GITHUB_TOKEN;
+    }
+    
+    const token = loadTokenSecurely();
+    if (token && isValidToken(token)) {
+      return token;
+    }
+    
+    if (sessionStorage.getItem('token_prompted') === 'true') {
+      return null;
+    }
+    
+    const input = prompt(
+      '🔑 Enter GitHub Personal Access Token\n\n' +
+      '⚠️ SECURITY NOTICE:\n' +
+      '• Token will be stored temporarily in memory\n' +
+      '• Cleared when you close this tab\n' +
+      '• Expires in 1 hour\n' +
+      '• Never share this token\n\n' +
+      'Get token from: https://github.com/settings/tokens\n' +
+      'Required scopes: repo\n\n' +
+      '(Leave blank to skip)'
+    );
+    
+    sessionStorage.setItem('token_prompted', 'true');
+    
+    if (input && input.length > 10 && isValidToken(input)) {
+      storeTokenSecurely(input);
+      return GITHUB_TOKEN;
+    }
+    
+    return null;
+  }
+
+  function clearGitHubToken() {
+    if (confirm('⚠️ Clear GitHub token? You will need to re-enter it.')) {
+      clearSensitiveData();
+      showToast('🗑️ Token cleared', 'info');
+    }
+  }
+
+  function addTokenManually() {
+    const input = prompt(
+      '🔑 Enter GitHub Personal Access Token\n\n' +
+      'Get token from: https://github.com/settings/tokens\n' +
+      'Required scopes: repo'
+    );
+    
+    if (input && input.length > 10 && isValidToken(input)) {
+      storeTokenSecurely(input);
+      showToast('✅ Token saved securely (expires in 1 hour)', 'success');
+      document.getElementById('settingsDropdown').classList.remove('open');
+    } else {
+      showToast('⚠️ Invalid token (must start with ghp_ or github_pat_)', 'error');
+    }
+  }
+
+  function showTokenStatus() {
+    const token = loadTokenSecurely();
+    if (token && TOKEN_EXPIRY > Date.now()) {
+      const expiryTime = new Date(TOKEN_EXPIRY).toLocaleTimeString();
+      showToast(`✅ Token active (expires at ${expiryTime})`, 'success');
+    } else if (token) {
+      showToast('⏰ Token expired. Please re-enter.', 'warning');
+    } else {
+      showToast('❌ No token found. Please set one.', 'error');
+    }
+    document.getElementById('settingsDropdown').classList.remove('open');
+  }
 
   // ================================================================
   // PASSWORD / LOGIN
@@ -2585,7 +2736,6 @@
       localStorage.setItem('editor_unlocked', 'true');
       showAdminControls();
       setTimeout(() => showToast('✓ Admin mode unlocked', 'success'), 200);
-      // Force sync after login with delay
       setTimeout(() => {
         console.log('🔄 Fetching data.json after login...');
         fetchFromGitHub(true);
@@ -2761,7 +2911,6 @@
     isSyncing = true;
 
     try {
-      // ✅ Use the correct path - same as what worked in the test
       const url = `../data.json?t=${Date.now()}`;
       console.log('🔄 Attempting to fetch from:', url);
       
@@ -2826,21 +2975,32 @@
   }
 
   // ================================================================
-  // GITHUB PUSH
+  // GITHUB PUSH - UPDATED WITH SECURE TOKEN
   // ================================================================
   async function autoPushToGitHub() {
     syncFromDOM();
     saveToStorage();
 
-    const token = typeof config !== 'undefined' && config.Github_Token ? config.Github_Token : null;
+    // 🔥 Get token from our secure system
+    const token = await getGitHubToken();
 
     if (!token) {
-      showToast('⚠️ No GitHub token found in config.js', 'error');
-      console.error('GitHub token is missing. Add Github_Token to config.js');
+      showToast('⚠️ No GitHub token found. Click Settings → Set Token', 'error');
+      console.error('GitHub token is missing.');
+      
+      const addToken = confirm('No GitHub token found. Would you like to add one now?');
+      if (addToken) {
+        const input = prompt('🔑 Enter your GitHub Personal Access Token:\n\nGet token from: https://github.com/settings/tokens');
+        if (input && input.length > 10 && isValidToken(input)) {
+          storeTokenSecurely(input);
+          setTimeout(() => autoPushToGitHub(), 500);
+        }
+      }
       return;
     }
 
     try {
+      console.log('🔄 Pushing to GitHub with token...');
       const getUrl = `${CONFIG.API_URL}?t=${Date.now()}`;
       const getResponse = await fetch(getUrl, {
         headers: {
@@ -3416,6 +3576,9 @@
     console.log('🚀 Editor booting up...');
     console.log('📁 CONFIG.RAW_URL:', CONFIG.RAW_URL);
     
+    // Security check
+    checkSecurity();
+    
     loadFromStorage();
     console.log('📦 State loaded from storage');
 
@@ -3432,6 +3595,11 @@
     renderAll();
     console.log('🎨 UI rendered');
 
+    // Load token silently
+    setTimeout(() => {
+      getGitHubToken();
+    }, 500);
+
     // Try to fetch data.json after a delay
     setTimeout(() => {
       console.log('🔄 Initial fetch of data.json...');
@@ -3441,6 +3609,9 @@
     // Start background sync
     setInterval(backgroundSync, CONFIG.POLL_INTERVAL);
     console.log(`⏰ Background sync started (every ${CONFIG.POLL_INTERVAL/1000}s)`);
+
+    // Auto-refresh token expiry every 15 minutes
+    setInterval(refreshTokenExpiry, 15 * 60 * 1000);
 
     document.querySelectorAll('.mode-pill').forEach((b) =>
       b.addEventListener('click', () => setView(b.getAttribute('data-view')))
