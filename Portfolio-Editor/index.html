@@ -2635,7 +2635,7 @@
   console.log('✅ CONFIG loaded with RAW_URL:', CONFIG.RAW_URL);
 
   // ================================================================
-  // SECURE TOKEN MANAGEMENT (with Custom Modal)
+  // SECURE TOKEN MANAGEMENT
   // ================================================================
   let GITHUB_TOKEN = null;
   let TOKEN_EXPIRY = 0;
@@ -2715,38 +2715,34 @@
   }
 
   // ================================================================
-  // CUSTOM TOKEN MODAL (replaces prompt)
+  // CUSTOM TOKEN MODAL
   // ================================================================
 
   let tokenModalResolve = null;
-  let tokenModalReject = null;
 
   function showTokenModal() {
     return new Promise((resolve) => {
       const modal = document.getElementById('tokenModal');
       const input = document.getElementById('tokenInput');
       
-      // Clear previous input
-      input.value = '';
+      if (!modal) {
+        console.error('❌ Token modal not found in HTML');
+        return;
+      }
       
-      // Remove error state if present
+      input.value = '';
       input.classList.remove('error');
       input.style.borderColor = '';
       input.placeholder = 'github_pat_xxxxxxxxxxxxxxxxxxxxx';
       
-      // Show modal
       modal.classList.add('open');
-      
-      // Focus input
       setTimeout(() => input.focus(), 100);
       
-      // Store resolve function
       tokenModalResolve = (value) => {
         modal.classList.remove('open');
         resolve(value);
       };
       
-      // Handle Enter key
       input.onkeydown = (e) => {
         if (e.key === 'Enter') {
           saveTokenFromModal();
@@ -2773,8 +2769,10 @@
         tokenModalResolve = null;
       }
       document.getElementById('tokenModal').classList.remove('open');
+      storeTokenSecurely(token);
+      showToast('✅ Token saved! You can now push to GitHub.', 'success');
+      console.log('✅ Token saved successfully');
     } else {
-      // Show error inside modal
       input.classList.add('error');
       input.style.borderColor = '#ff6b6b';
       input.placeholder = '❌ Invalid token (must start with ghp_ or github_pat_)';
@@ -2787,25 +2785,20 @@
   }
 
   async function getGitHubToken() {
-    // Check memory
     if (GITHUB_TOKEN && TOKEN_EXPIRY > Date.now()) {
       return GITHUB_TOKEN;
     }
     
-    // Check session storage
     const token = loadTokenSecurely();
     if (token && isValidToken(token)) {
       return token;
     }
     
-    // Check if user has been prompted
     if (sessionStorage.getItem('token_prompted') === 'true') {
       return null;
     }
     
-    // Show custom modal instead of prompt
     const input = await showTokenModal();
-    
     sessionStorage.setItem('token_prompted', 'true');
     
     if (input && input.length > 10 && isValidToken(input)) {
@@ -2824,7 +2817,6 @@
   }
 
   function addTokenManually() {
-    // Reuse the modal
     showTokenModal().then((token) => {
       if (token && isValidToken(token)) {
         storeTokenSecurely(token);
@@ -2864,18 +2856,41 @@
   async function checkPassword() {
     const input = document.getElementById('loginPassword').value;
     const hashedInput = await hashPassword(input);
+    
     if (hashedInput === PASSWORD_HASH) {
       document.getElementById('loginGate').classList.add('hidden');
       localStorage.setItem('editor_unlocked', 'true');
       showAdminControls();
-      setTimeout(() => showToast('✓ Admin mode unlocked', 'success'), 200);
+      showToast('✓ Admin mode unlocked', 'success');
+      
       setTimeout(() => {
-        console.log('🔄 Fetching data.json after login...');
-        fetchFromGitHub(true);
-      }, 1000);
+        console.log('🔍 Checking for GitHub token after login...');
+        checkAndHandleToken();
+      }, 500);
     } else {
       document.getElementById('loginError').classList.add('show');
     }
+  }
+
+  async function checkAndHandleToken() {
+    console.log('🔍 Checking for GitHub token...');
+    
+    if (GITHUB_TOKEN && TOKEN_EXPIRY > Date.now()) {
+      console.log('✅ Token found in memory');
+      return;
+    }
+    
+    const token = sessionStorage.getItem('github_token_secure');
+    if (token && isValidToken(token)) {
+      GITHUB_TOKEN = token;
+      TOKEN_EXPIRY = Date.now() + (60 * 60 * 1000);
+      console.log('✅ Token loaded from sessionStorage');
+      showToast('✅ GitHub token loaded', 'success');
+      return;
+    }
+    
+    console.log('🔑 No token found, showing modal...');
+    showTokenModal();
   }
 
   function showAdminControls() {
@@ -3034,7 +3049,7 @@
   }
 
   // ================================================================
-  // GITHUB FETCH - FIXED VERSION
+  // GITHUB FETCH
   // ================================================================
   async function fetchFromGitHub(force = false) {
     if (isSyncing) {
@@ -3108,13 +3123,12 @@
   }
 
   // ================================================================
-  // GITHUB PUSH - UPDATED WITH SECURE TOKEN
+  // GITHUB PUSH
   // ================================================================
   async function autoPushToGitHub() {
     syncFromDOM();
     saveToStorage();
 
-    // 🔥 Get token from our secure system
     const token = await getGitHubToken();
 
     if (!token) {
@@ -3151,6 +3165,9 @@
       const fileInfo = await getResponse.json();
       const content = btoa(unescape(encodeURIComponent(JSON.stringify(state, null, 2))));
 
+      const now = new Date();
+      const commitMessage = `📝 Update portfolio - ${now.toISOString().replace('T', ' ').slice(0, 19)} UTC`;
+
       const putResponse = await fetch(CONFIG.API_URL, {
         method: 'PUT',
         headers: {
@@ -3159,7 +3176,7 @@
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          message: `Update portfolio data - ${new Date().toLocaleString()}`,
+          message: commitMessage,
           content: content,
           sha: fileInfo.sha
         })
@@ -3177,6 +3194,7 @@
 
       showToast('✓ Published to GitHub successfully!', 'success');
       console.log('✅ Push successful:', result.commit.html_url);
+      console.log('📅 Commit message:', commitMessage);
 
       setTimeout(() => fetchFromGitHub(true), 2000);
 
@@ -3703,15 +3721,13 @@
   }
 
   // ================================================================
-  // BOOT
+  // BOOT - FIXED: Login Gate Always First
   // ================================================================
   document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Editor booting up...');
     console.log('📁 CONFIG.RAW_URL:', CONFIG.RAW_URL);
     
-    // Security check
     checkSecurity();
-    
     loadFromStorage();
     console.log('📦 State loaded from storage');
 
@@ -3719,21 +3735,41 @@
     document.documentElement.setAttribute('data-theme', savedTheme);
     document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
 
-    if (localStorage.getItem('editor_unlocked') === 'true') {
-      const gate = document.getElementById('loginGate');
-      if (gate) gate.classList.add('hidden');
+    // ================================================================
+    // 🔥 FIXED: Login Gate Always Shows First
+    // ================================================================
+    
+    const isUnlocked = localStorage.getItem('editor_unlocked') === 'true';
+    const hasToken = sessionStorage.getItem('github_token_secure') !== null;
+    const gate = document.getElementById('loginGate');
+    
+    if (isUnlocked && hasToken) {
+      // ✅ Both login AND token exist → Direct access
+      gate.classList.add('hidden');
       setTimeout(showAdminControls, 100);
+      console.log('✅ Login and token found, direct access');
+    } else if (isUnlocked && !hasToken) {
+      // ❌ Login exists but NO token → Show login gate (NOT token modal)
+      localStorage.removeItem('editor_unlocked');
+      gate.classList.remove('hidden');
+      console.log('🔒 Login gate shown (token missing)');
+    } else {
+      // ❌ No login → Show login gate
+      gate.classList.remove('hidden');
+      console.log('🔒 Login gate shown');
     }
 
     renderAll();
     console.log('🎨 UI rendered');
 
-    // Load token silently
-    setTimeout(() => {
-      getGitHubToken();
-    }, 500);
+    // Load token silently ONLY if login exists AND token exists
+    if (isUnlocked && hasToken) {
+      setTimeout(() => {
+        getGitHubToken();
+      }, 500);
+    }
 
-    // Try to fetch data.json after a delay
+    // Fetch data.json after delay
     setTimeout(() => {
       console.log('🔄 Initial fetch of data.json...');
       fetchFromGitHub(true);
@@ -3743,7 +3779,6 @@
     setInterval(backgroundSync, CONFIG.POLL_INTERVAL);
     console.log(`⏰ Background sync started (every ${CONFIG.POLL_INTERVAL/1000}s)`);
 
-    // Auto-refresh token expiry every 15 minutes
     setInterval(refreshTokenExpiry, 15 * 60 * 1000);
 
     document.querySelectorAll('.mode-pill').forEach((b) =>
@@ -3793,6 +3828,5 @@
   });
 
   console.log('📄 Script loaded successfully');
-</script>
-  </body>
+</script>  </body>
 </html>
