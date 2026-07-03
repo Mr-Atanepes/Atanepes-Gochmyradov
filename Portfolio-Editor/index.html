@@ -2352,80 +2352,20 @@
           >
             <i class="fas fa-cog"></i>
           </button>
-          <div class="settings-dropdown" id="settingsDropdown">
-            <button
-              onclick="
-                toggleTheme();
-                document
-                  .getElementById('settingsDropdown')
-                  .classList.remove('open');
-              "
-            >
-              <i class="fas fa-sun"></i> Toggle Theme
-            </button>
-            <button
-              class="admin-only"
-              onclick="
-                saveAllChanges();
-                document
-                  .getElementById('settingsDropdown')
-                  .classList.remove('open');
-              "
-            >
-              <i class="fas fa-save"></i> Save All Changes
-            </button>
-            <button
-              class="admin-only"
-              onclick="
-                saveAndPublish();
-                document
-                  .getElementById('settingsDropdown')
-                  .classList.remove('open');
-              "
-            >
-              <i class="fas fa-cloud-upload-alt"></i> Save & Publish
-            </button>
-            <button
-              class="admin-only"
-              onclick="
-                autoPushToGitHub();
-                document
-                  .getElementById('settingsDropdown')
-                  .classList.remove('open');
-              "
-            >
-              <i class="fas fa-upload"></i> Push to GitHub
-            </button>
-            <button
-              class="admin-only"
-              onclick="
-                downloadJSON();
-                document
-                  .getElementById('settingsDropdown')
-                  .classList.remove('open');
-              "
-            >
-              <i class="fas fa-download"></i> Export JSON Backup
-            </button>
-            <button
-              class="admin-only"
-              onclick="
-                resetAllToDefault();
-                document
-                  .getElementById('settingsDropdown')
-                  .classList.remove('open');
-              "
-            >
-              <i class="fas fa-undo"></i> Reset All
-            </button>
-          </div>
-        </span>
-        <button class="menu-toggle" id="menuToggle">
-          <i class="fas fa-bars"></i>
-        </button>
-      </div>
-    </div>
-
+        <div class="settings-dropdown" id="settingsDropdown">
+  <button onclick="toggleTheme(); document.getElementById('settingsDropdown').classList.remove('open');">
+    <i class="fas fa-sun"></i> Toggle Theme
+  </button>
+  <button class="admin-only" onclick="saveAndPublish(); document.getElementById('settingsDropdown').classList.remove('open');">
+    <i class="fas fa-cloud-upload-alt"></i> 💾 Save & Publish
+  </button>
+  <button class="admin-only" onclick="downloadJSON(); document.getElementById('settingsDropdown').classList.remove('open');">
+    <i class="fas fa-download"></i> 📥 Export JSON Backup
+  </button>
+  <button class="admin-only" onclick="resetAllToDefault(); document.getElementById('settingsDropdown').classList.remove('open');">
+    <i class="fas fa-undo"></i> 🔄 Reset All
+  </button>
+</div>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <div class="editor-layout" id="editorLayout" data-view="split">
@@ -2621,16 +2561,17 @@
 
 <script>
   // ================================================================
-  // CONFIGURATION
+  // CONFIGURATION - FIXED FOR ALL DEVICES
   // ================================================================
-const CONFIG = {
-  GITHUB_OWNER: 'Mr-Atanepes',
-  GITHUB_REPO: 'Atanepes-Gochmyradov',
-  GITHUB_PATH: 'data.json',
-  RAW_URL: 'https://mr-atanepes.github.io/Atanepes-Gochmyradov/data.json',  // ← FIXED
-  API_URL: 'https://api.github.com/repos/Mr-Atanepes/Atanepes-Gochmyradov/contents/data.json',
-  POLL_INTERVAL: 10000,
-};
+  const CONFIG = {
+    GITHUB_OWNER: 'Mr-Atanepes',
+    GITHUB_REPO: 'Atanepes-Gochmyradov',
+    GITHUB_PATH: 'data.json',
+    RAW_URL: 'https://mr-atanepes.github.io/Atanepes-Gochmyradov/data.json',
+    API_URL: 'https://api.github.com/repos/Mr-Atanepes/Atanepes-Gochmyradov/contents/data.json',
+    POLL_INTERVAL: 10000,
+  };
+
   console.log('✅ CONFIG loaded with RAW_URL:', CONFIG.RAW_URL);
 
   // ================================================================
@@ -2839,7 +2780,7 @@ const CONFIG = {
   }
 
   // ================================================================
-  // PASSWORD / LOGIN
+  // PASSWORD / LOGIN - FIXED: Login Gate Always First
   // ================================================================
   const PASSWORD_HASH = "826d3c256beee738bdd1267d6cf9f07a1aa3f4c4514153b077e346b71b567f8e";
 
@@ -3048,7 +2989,7 @@ const CONFIG = {
   }
 
   // ================================================================
-  // GITHUB FETCH
+  // GITHUB FETCH - FIXED: Full URL for all devices
   // ================================================================
   async function fetchFromGitHub(force = false) {
     if (isSyncing) {
@@ -3058,7 +2999,7 @@ const CONFIG = {
     isSyncing = true;
 
     try {
-      const url = `../data.json?t=${Date.now()}`;
+      const url = `${CONFIG.RAW_URL}?t=${Date.now()}`;
       console.log('🔄 Attempting to fetch from:', url);
       
       const response = await fetch(url, {
@@ -3122,7 +3063,7 @@ const CONFIG = {
   }
 
   // ================================================================
-  // GITHUB PUSH
+  // GITHUB PUSH - WITH TIMESTAMP COMMIT MESSAGE
   // ================================================================
   async function autoPushToGitHub() {
     syncFromDOM();
@@ -3246,13 +3187,9 @@ const CONFIG = {
     });
   }
 
-  function saveAllChanges() {
-    syncFromDOM();
-    saveToStorage();
-    renderAll();
-    showToast('✓ All changes saved locally', 'success');
-  }
-
+  // ================================================================
+  // SIMPLIFIED: ONE BUTTON TO RULE THEM ALL
+  // ================================================================
   function saveAndPublish() {
     syncFromDOM();
     saveToStorage();
@@ -3735,25 +3672,21 @@ const CONFIG = {
     document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
 
     // ================================================================
-    // 🔥 FIXED: Login Gate Always Shows First
+    // FIXED: Login Gate Always Shows First
     // ================================================================
-    
     const isUnlocked = localStorage.getItem('editor_unlocked') === 'true';
     const hasToken = sessionStorage.getItem('github_token_secure') !== null;
     const gate = document.getElementById('loginGate');
     
     if (isUnlocked && hasToken) {
-      // ✅ Both login AND token exist → Direct access
       gate.classList.add('hidden');
       setTimeout(showAdminControls, 100);
       console.log('✅ Login and token found, direct access');
     } else if (isUnlocked && !hasToken) {
-      // ❌ Login exists but NO token → Show login gate (NOT token modal)
       localStorage.removeItem('editor_unlocked');
       gate.classList.remove('hidden');
       console.log('🔒 Login gate shown (token missing)');
     } else {
-      // ❌ No login → Show login gate
       gate.classList.remove('hidden');
       console.log('🔒 Login gate shown');
     }
@@ -3761,20 +3694,17 @@ const CONFIG = {
     renderAll();
     console.log('🎨 UI rendered');
 
-    // Load token silently ONLY if login exists AND token exists
     if (isUnlocked && hasToken) {
       setTimeout(() => {
         getGitHubToken();
       }, 500);
     }
 
-    // Fetch data.json after delay
     setTimeout(() => {
       console.log('🔄 Initial fetch of data.json...');
       fetchFromGitHub(true);
     }, 1500);
 
-    // Start background sync
     setInterval(backgroundSync, CONFIG.POLL_INTERVAL);
     console.log(`⏰ Background sync started (every ${CONFIG.POLL_INTERVAL/1000}s)`);
 
@@ -3827,5 +3757,5 @@ const CONFIG = {
   });
 
   console.log('📄 Script loaded successfully');
-</script>  </body>
+</script> </body>
 </html>
