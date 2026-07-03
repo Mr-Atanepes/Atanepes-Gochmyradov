@@ -2547,991 +2547,906 @@
     </div>
     <div class="toast" id="toast"></div>
 
-    <script>
-      const PASSWORD_HASH =
-        "826d3c256beee738bdd1267d6cf9f07a1aa3f4c4514153b077e346b71b567f8e";
-      function demoSave() {
-        syncFromDOM();
-        saveToStorage();
-        showToast("💾 Demo saved — changes cleared on refresh", "info");
-      }
-      function enterDemoMode() {
-        document.getElementById("loginGate").classList.add("hidden");
-        setTimeout(
-          () => showToast("👁️ Demo mode — changes won't be saved", "info"),
-          300,
-        );
-      }
+ <script>
+  // ================================================================
+  // CONFIGURATION
+  // ================================================================
+  const CONFIG = {
+    GITHUB_OWNER: 'Mr-Atanepes',
+    GITHUB_REPO: 'Atanepes-Gochmyradov',
+    GITHUB_PATH: 'data.json',
+    RAW_URL: 'https://raw.githubusercontent.com/Mr-Atanepes/Atanepes-Gochmyradov/main/data.json',
+    API_URL: 'https://api.github.com/repos/Mr-Atanepes/Atanepes-Gochmyradov/contents/data.json',
+    POLL_INTERVAL: 10000,
+  };
 
-      async function hashPassword(password) {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(password);
-        const hash = await crypto.subtle.digest("SHA-256", data);
-        return Array.from(new Uint8Array(hash))
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join("");
-      }
+  // ================================================================
+  // PASSWORD / LOGIN
+  // ================================================================
+  const PASSWORD_HASH = "826d3c256beee738bdd1267d6cf9f07a1aa3f4c4514153b077e346b71b567f8e";
 
-      async function checkPassword() {
-        const input = document.getElementById("loginPassword").value;
-        const hashedInput = await hashPassword(input);
-        if (hashedInput === PASSWORD_HASH) {
-          document.getElementById("loginGate").classList.add("hidden");
-          localStorage.setItem("editor_unlocked", "true");
-          showAdminControls();
-          setTimeout(() => showToast("✓ Admin mode unlocked", "success"), 200);
-        } else {
-          document.getElementById("loginError").classList.add("show");
-        }
+  async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hash = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(hash))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  async function checkPassword() {
+    const input = document.getElementById('loginPassword').value;
+    const hashedInput = await hashPassword(input);
+    if (hashedInput === PASSWORD_HASH) {
+      document.getElementById('loginGate').classList.add('hidden');
+      localStorage.setItem('editor_unlocked', 'true');
+      showAdminControls();
+      setTimeout(() => showToast('✓ Admin mode unlocked', 'success'), 200);
+      setTimeout(() => fetchFromGitHub(true), 500);
+    } else {
+      document.getElementById('loginError').classList.add('show');
+    }
+  }
+
+  function showAdminControls() {
+    document.querySelectorAll('.admin-only').forEach((el) => {
+      el.classList.add('visible');
+    });
+    document.querySelectorAll('.demo-only').forEach((el) => el.classList.remove('visible'));
+  }
+
+  function enterDemoMode() {
+    document.getElementById('loginGate').classList.add('hidden');
+    setTimeout(() => showToast('👁️ Demo mode — changes won\'t be saved', 'info'), 300);
+  }
+
+  // ================================================================
+  // DEFAULT STATE
+  // ================================================================
+  const defaultState = {
+    jobStatus: "available",
+    firstName: "Atanepes",
+    lastName: "Gochmyradov",
+    title: "// Junior Full-Stack Web Developer",
+    tagline: "Aspiring web developer with 3 months of intensive MERN stack training. Passionate about building responsive, user-friendly web applications and contributing to real-world projects.",
+    email: "atanepesgochmyradov@gmail.com",
+    phone: "+971 58 558 3938",
+    location: "Dubai, International City, UAE",
+    terminalName: "\"Atanepes Gochmyradov\"",
+    terminalRole: "\"Full-Stack Developer\"",
+    terminalLevel: "\"Junior\"",
+    terminalStack: "[\"MongoDB\",\"Express\",\"React\",\"Node\"]",
+    terminalLocation: "\"Dubai, UAE 🇦🇪\"",
+    terminalLanguages: "[\"EN\",\"RO\",\"RU\",\"TR\"]",
+    aboutP1: "I'm an <strong>aspiring full-stack web developer</strong> with a solid foundation in both front-end and back-end technologies, built through 3 months of intensive bootcamp training at Teach Me Code.",
+    aboutP2: "My experience spans personal projects including a <strong>food ordering app</strong> and a <strong>to-do list application</strong>, using HTML, CSS, JavaScript, and React on the frontend with Node.js, Express, and MongoDB powering the backend.",
+    aboutP3: "I'm eager to grow in a professional environment, collaborate with experienced teams, and ship real-world products that users love.",
+    profReact: 65,
+    profHTML: 72,
+    profNode: 60,
+    profMongo: 58,
+    profDocker: 30,
+    frontendSkills: [
+      { name: "UX/UI Design", detail: "Wireframing, Prototyping, Personas", icon: "🎨" },
+      { name: "HTML5", detail: "Semantic markup, Forms, Accessibility", icon: "🌐" },
+      { name: "CSS3", detail: "Flexbox, Grid, Animations, Media Queries", icon: "💅" },
+      { name: "JavaScript ES6+", detail: "Promises, async/await, DOM, Closures", icon: "⚡" },
+      { name: "React", detail: "Components, Hooks, Context API, Lazy Loading", icon: "⚛️" }
+    ],
+    backendSkills: [
+      { name: "Node.js", detail: "Server-Side JS, Async, Error Handling", icon: "🟢" },
+      { name: "Express.js", detail: "REST APIs, Middleware, Routing", icon: "🚂" },
+      { name: "MongoDB", detail: "Mongoose, CRUD, Schemas", icon: "🍃" },
+      { name: "Authentication", detail: "JWT, RBAC, Sessions", icon: "🔐" }
+    ],
+    devopsSkills: [
+      { name: "Git & GitHub", detail: "Version Control, Branching", icon: "🐙" },
+      { name: "Docker", detail: "Containers, Compose", icon: "🐳" },
+      { name: "CI/CD", detail: "GitHub Actions, Pipelines", icon: "⚙️" }
+    ],
+    experience: [{
+      company: "Teach Me Code",
+      role: "// Full-Stack Development Bootcamp",
+      period: "Jun 2024 — Sep 2024",
+      bullets: [
+        "Completed intensive full-stack bootcamp covering MERN stack, REST APIs, and responsive design.",
+        "Built production-ready full-stack apps with authentication, file uploads, and RBAC.",
+        "Gained hands-on Git/GitHub collaboration, Docker basics, and CI/CD pipelines.",
+        "Optimized performance, debugging, and cross-browser compatibility."
+      ]
+    }],
+    projects: [{
+      id: 1,
+      name: "Food Ordering App",
+      desc: "Fully responsive food ordering web app with cart, product listings, and smooth UX across all devices.",
+      tags: ["HTML", "CSS", "JavaScript", "React"],
+      status: "featured",
+      github: "https://github.com/atanepes/food-order-app",
+      demo: "https://foodie-demo.vercel.app"
+    }, {
+      id: 2,
+      name: "To-Do List App",
+      desc: "Task management with CRUD, persistent storage, mobile-first design, and clean interactions.",
+      tags: ["HTML", "CSS", "JavaScript"],
+      status: "normal",
+      github: "https://github.com/atanepes/todo-app",
+      demo: "https://todo-demo.netlify.app"
+    }, {
+      id: 3,
+      name: "Full-Stack Bootcamp App",
+      desc: "Production-grade MERN application with RBAC, JWT, file uploads, and optimized performance.",
+      tags: ["Node.js", "Express", "MongoDB", "React", "JWT"],
+      status: "featured",
+      github: "https://github.com/atanepes/fullstack-bootcamp",
+      demo: "https://bootcamp-app.onrender.com"
+    }],
+    education: [{
+      degree: "Web Development Bootcamp",
+      school: "Teach Me Code — Full-Time Intensive",
+      period: "June 2024 — September 2024"
+    }, {
+      degree: "University Degree",
+      school: "University of Bucharest · Romanian-American University",
+      period: "October 2019 — June 2023"
+    }]
+  };
+
+  // ================================================================
+  // STATE MANAGEMENT
+  // ================================================================
+  let state = JSON.parse(JSON.stringify(defaultState));
+  let editingId = null,
+    selectedProjectId = null,
+    pendingStatus = null,
+    flippedCardId = null;
+  let lastRemoteUpdate = 0;
+  let lastLocalUpdate = 0;
+  let isSyncing = false;
+
+  function loadFromStorage() {
+    const s = localStorage.getItem('portfolioState');
+    const timestamp = localStorage.getItem('portfolioLastUpdated');
+    if (s) {
+      try {
+        const p = JSON.parse(s);
+        state = { ...defaultState, ...p };
+        if (!state.projects?.length) state.projects = [...defaultState.projects];
+        state.projects = state.projects.map((pj) => ({
+          ...pj,
+          id: pj.id || Date.now() + Math.random()
+        }));
+        if (!state.jobStatus) state.jobStatus = "available";
+        lastLocalUpdate = timestamp ? parseInt(timestamp) : Date.now();
+      } catch (e) {
+        console.warn('Failed to load state from storage:', e);
       }
-      function showAdminControls() {
-        document.querySelectorAll(".admin-only").forEach((el) => {
-          el.classList.add("visible");
-        });
-        document
-          .querySelectorAll(".demo-only")
-          .forEach((el) => el.classList.remove("visible"));
-      }
-      document.addEventListener("DOMContentLoaded", () => {
-        if (localStorage.getItem("editor_unlocked") === "true") {
-          const gate = document.getElementById("loginGate");
-          if (gate) gate.classList.add("hidden");
-          setTimeout(showAdminControls, 100);
-        }
-        if (localStorage.getItem("editor_unlocked") !== "true") {
-          document
-            .querySelectorAll(".demo-only")
-            .forEach((el) => el.classList.add("visible"));
+    }
+  }
+
+  function saveToStorage() {
+    const timestamp = Date.now();
+    localStorage.setItem('portfolioState', JSON.stringify(state));
+    localStorage.setItem('portfolioLastUpdated', String(timestamp));
+    localStorage.setItem('portfolioRemoteUpdated', String(lastRemoteUpdate));
+    lastLocalUpdate = timestamp;
+  }
+
+  function getTimestamp() {
+    return {
+      local: lastLocalUpdate || 0,
+      remote: lastRemoteUpdate || 0
+    };
+  }
+
+  function isRemoteNewer() {
+    const timestamps = getTimestamp();
+    return timestamps.remote > timestamps.local;
+  }
+
+  // ================================================================
+  // GITHUB FETCH
+  // ================================================================
+  async function fetchFromGitHub(force = false) {
+    if (isSyncing) return;
+    isSyncing = true;
+
+    try {
+      const url = `${CONFIG.RAW_URL}?t=${Date.now()}`;
+      const response = await fetch(url, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
 
-      const defaultState = {
-        jobStatus: "available",
-        firstName: "Atanepes",
-        lastName: "Gochmyradov",
-        title: "// Junior Full-Stack Web Developer",
-        tagline:
-          "Aspiring web developer with 3 months of intensive MERN stack training. Passionate about building responsive, user-friendly web applications and contributing to real-world projects.",
-        email: "atanepesgochmyradov@gmail.com",
-        phone: "+971 58 558 3938",
-        location: "Dubai, International City, UAE",
-        terminalName: '"Atanepes Gochmyradov"',
-        terminalRole: '"Full-Stack Developer"',
-        terminalLevel: '"Junior"',
-        terminalStack: '["MongoDB","Express","React","Node"]',
-        terminalLocation: '"Dubai, UAE \uD83C\uDDE6\uD83C\uDDEA"',
-        terminalLanguages: '["EN","RO","RU","TR"]',
-        aboutP1:
-          "I'm an <strong>aspiring full-stack web developer</strong> with a solid foundation in both front-end and back-end technologies, built through 3 months of intensive bootcamp training at Teach Me Code.",
-        aboutP2:
-          "My experience spans personal projects including a <strong>food ordering app</strong> and a <strong>to-do list application</strong>, using HTML, CSS, JavaScript, and React on the frontend with Node.js, Express, and MongoDB powering the backend.",
-        aboutP3:
-          "I'm eager to grow in a professional environment, collaborate with experienced teams, and ship real-world products that users love.",
-        profReact: 65,
-        profHTML: 72,
-        profNode: 60,
-        profMongo: 58,
-        profDocker: 30,
-        frontendSkills: [
-          {
-            name: "UX/UI Design",
-            detail: "Wireframing, Prototyping, Personas",
-            icon: "🎨",
-          },
-          {
-            name: "HTML5",
-            detail: "Semantic markup, Forms, Accessibility",
-            icon: "🌐",
-          },
-          {
-            name: "CSS3",
-            detail: "Flexbox, Grid, Animations, Media Queries",
-            icon: "💅",
-          },
-          {
-            name: "JavaScript ES6+",
-            detail: "Promises, async/await, DOM, Closures",
-            icon: "⚡",
-          },
-          {
-            name: "React",
-            detail: "Components, Hooks, Context API, Lazy Loading",
-            icon: "⚛️",
-          },
-        ],
-        backendSkills: [
-          {
-            name: "Node.js",
-            detail: "Server-Side JS, Async, Error Handling",
-            icon: "🟢",
-          },
-          {
-            name: "Express.js",
-            detail: "REST APIs, Middleware, Routing",
-            icon: "🚂",
-          },
-          { name: "MongoDB", detail: "Mongoose, CRUD, Schemas", icon: "🍃" },
-          { name: "Authentication", detail: "JWT, RBAC, Sessions", icon: "🔐" },
-        ],
-        devopsSkills: [
-          {
-            name: "Git & GitHub",
-            detail: "Version Control, Branching",
-            icon: "🐙",
-          },
-          { name: "Docker", detail: "Containers, Compose", icon: "🐳" },
-          { name: "CI/CD", detail: "GitHub Actions, Pipelines", icon: "⚙️" },
-        ],
-        experience: [
-          {
-            company: "Teach Me Code",
-            role: "// Full-Stack Development Bootcamp",
-            period: "Jun 2024 — Sep 2024",
-            bullets: [
-              "Completed intensive full-stack bootcamp covering MERN stack, REST APIs, and responsive design.",
-              "Built production-ready full-stack apps with authentication, file uploads, and RBAC.",
-              "Gained hands-on Git/GitHub collaboration, Docker basics, and CI/CD pipelines.",
-              "Optimized performance, debugging, and cross-browser compatibility.",
-            ],
-          },
-        ],
-        projects: [
-          {
-            id: 1,
-            name: "Food Ordering App",
-            desc: "Fully responsive food ordering web app with cart, product listings, and smooth UX across all devices.",
-            tags: ["HTML", "CSS", "JavaScript", "React"],
-            status: "featured",
-            github: "https://github.com/atanepes/food-order-app",
-            demo: "https://foodie-demo.vercel.app",
-          },
-          {
-            id: 2,
-            name: "To-Do List App",
-            desc: "Task management with CRUD, persistent storage, mobile-first design, and clean interactions.",
-            tags: ["HTML", "CSS", "JavaScript"],
-            status: "normal",
-            github: "https://github.com/atanepes/todo-app",
-            demo: "https://todo-demo.netlify.app",
-          },
-          {
-            id: 3,
-            name: "Full-Stack Bootcamp App",
-            desc: "Production-grade MERN application with RBAC, JWT, file uploads, and optimized performance.",
-            tags: ["Node.js", "Express", "MongoDB", "React", "JWT"],
-            status: "featured",
-            github: "https://github.com/atanepes/fullstack-bootcamp",
-            demo: "https://bootcamp-app.onrender.com",
-          },
-        ],
-        education: [
-          {
-            degree: "Web Development Bootcamp",
-            school: "Teach Me Code — Full-Time Intensive",
-            period: "June 2024 — September 2024",
-          },
-          {
-            degree: "University Degree",
-            school: "University of Bucharest · Romanian-American University",
-            period: "October 2019 — June 2023",
-          },
-        ],
-      };
-      let state = JSON.parse(JSON.stringify(defaultState));
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-      let editingId = null,
-        selectedProjectId = null,
-        pendingStatus = null,
-        flippedCardId = null;
-      function loadFromStorage() {
-        const s = localStorage.getItem("portfolioState");
-        if (s)
-          try {
-            const p = JSON.parse(s);
-            state = { ...defaultState, ...p };
-            if (!state.projects?.length)
-              state.projects = [...defaultState.projects];
-            state.projects = state.projects.map((pj) => ({
-              ...pj,
-              id: pj.id || Date.now() + Math.random(),
-            }));
-            if (!state.jobStatus) state.jobStatus = "available";
-          } catch (e) {}
-      }
-      function saveToStorage() {
-        localStorage.setItem("portfolioState", JSON.stringify(state));
-        localStorage.setItem("portfolioLastUpdated", Date.now());
-      }
-      function openStatusModal() {
-        pendingStatus = state.jobStatus;
-        document
-          .getElementById("statusAvailable")
-          .classList.toggle("selected", state.jobStatus === "available");
-        document
-          .getElementById("statusNotAvailable")
-          .classList.toggle("selected", state.jobStatus !== "available");
-        document.getElementById("statusModal").classList.add("open");
-      }
-      function selectStatus(s) {
-        pendingStatus = s;
-        const a = document.getElementById("statusAvailable"),
-          na = document.getElementById("statusNotAvailable");
-        if (s === "available") {
-          a.classList.add("selected");
-          na.classList.remove("selected");
-        } else {
-          na.classList.add("selected");
-          a.classList.remove("selected");
-        }
-      }
-      function applyStatus() {
-        if (pendingStatus) {
-          state.jobStatus = pendingStatus;
-          renderAll();
+      const remoteData = await response.json();
+      const remoteTimestamp = parseInt(localStorage.getItem('portfolioRemoteUpdated')) || 0;
 
-          const masterIntro = document.querySelector(
-            "#masterContent .contact-intro",
-          );
-          if (masterIntro) {
-            masterIntro.textContent =
-              state.jobStatus === "available"
-                ? "I'm actively looking for my first professional role as a full-stack developer. Whether you have a project, a junior opening, or just want to chat — my inbox is open."
-                : "I'm currently employed but always open to exciting opportunities. Whether you have a project, collaboration idea, or just want to connect — don't hesitate to reach out.";
-          }
-
-          const slaveIntro = document.querySelector(
-            "#slaveContent .contact-intro",
-          );
-          if (slaveIntro) {
-            slaveIntro.textContent =
-              state.jobStatus === "available"
-                ? "I'm actively looking for my first professional role as a full-stack developer. Whether you have a project, a junior opening, or just want to chat — my inbox is open."
-                : "I'm currently employed but always open to exciting opportunities. Whether you have a project, collaboration idea, or just want to connect — don't hesitate to reach out.";
-          }
-
-          showToast("Status updated", "success");
-        }
-        closeStatusModal();
+      if (!force && remoteTimestamp <= lastLocalUpdate) {
+        console.log('Remote data is older than local, skipping sync');
+        isSyncing = false;
+        return;
       }
 
-      function closeStatusModal() {
-        document.getElementById("statusModal").classList.remove("open");
-      }
-      function getBadgeHTML(isMaster) {
-        const avail = state.jobStatus === "available";
-        const cls = avail ? "available" : "not-available";
-        const txt = avail
-          ? "✨ Available for work"
-          : "🔒 Currently employed • Not available";
-        if (isMaster)
-          return `<div class="hero-badge ${cls}" onclick="openStatusModal()">${txt} <button class="badge-edit-btn" onclick="event.stopPropagation();openStatusModal()"><i class="fas fa-pen"></i></button></div>`;
-        return `<div class="hero-badge ${cls}">${txt}</div>`;
-      }
-      function updateProjectTemp(id, field, val) {
-        const p = state.projects.find((p) => p.id === id);
-        if (p) p[field] = val;
-        renderLayers();
-      }
-      function addSkillTemp() {
-        const inp = document.getElementById("skillInput");
-        const cat = document.getElementById("skillCategory");
-        if (inp && inp.value.trim()) {
-          const newSkill = {
-            name: inp.value.trim(),
-            detail: "Custom skill",
-            icon: "🛠️",
-          };
-          const category = cat ? cat.value : "frontend";
-          if (category === "backend") state.backendSkills.push(newSkill);
-          else if (category === "devops") state.devopsSkills.push(newSkill);
-          else state.frontendSkills.push(newSkill);
-          renderAll();
-          inp.value = "";
-          showToast("✓ Skill added", "success");
-        }
-      }
-      function syncFromDOM() {
-        const master = document.getElementById("masterContent");
-        if (!master) return;
-        master
-          .querySelectorAll('[data-field][contenteditable="true"]')
-          .forEach((el) => {
-            const f = el.getAttribute("data-field"),
-              v = el.innerText;
-            if (f in state) state[f] = v;
-          });
-      }
-      function saveAllChanges() {
-        syncFromDOM();
+      const merged = { ...defaultState, ...remoteData };
+      if (!merged.projects?.length) merged.projects = [...defaultState.projects];
+      merged.projects = merged.projects.map((p) => ({
+        ...p,
+        id: p.id || Date.now() + Math.random()
+      }));
+
+      const currentStr = JSON.stringify(state);
+      const newStr = JSON.stringify(merged);
+      if (currentStr !== newStr || force) {
+        state = merged;
+        lastRemoteUpdate = Date.now();
+        localStorage.setItem('portfolioRemoteUpdated', String(lastRemoteUpdate));
         saveToStorage();
         renderAll();
-        showToast("✓ All changes saved successfully", "success");
+        showToast('✓ Synced with GitHub', 'success');
       }
-      async function fetchFromGitHub() {
-        const OWNER = "Mr-Atanepes";
-        const REPO = "Atanepes-Gochmyradov";
-        const PATH = "data.json";
-        
-        // 1. Force the browser to completely ignore its local cache using time strings
-        const timestamp = new Date().getTime();
-        
-      // 2. FIXED ENDPOINT: Look inside your own website folder cleanly!
-const localPathUrl = `../data.json?t=${timestamp}`;
 
-try {
-  // 3. MATCHED VARIABLE: fetch uses localPathUrl, output goes to res
-  const res = await fetch(localPathUrl, {
-            headers: {
-              "Cache-Control": "no-cache, no-store, must-revalidate",
-              "Pragma": "no-cache",
-              "Expires": "0"
-            } 
-          });
-          
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          
-          // 3. FIXED PARSING: The raw link returns text directly, no need for complex 'atob()' conversions!
-          const parsed = await res.json();
-          
-          const merged = { ...defaultState, ...parsed };
-          if (!merged.projects?.length)
-            merged.projects = [...defaultState.projects];
-          merged.projects = merged.projects.map((p) => ({
-            ...p,
-            id: p.id || Date.now() + Math.random(),
-          }));
-          
-          state = merged;
-          saveToStorage();
-          renderAll();
-          showToast("✓ Synced with GitHub", "success");
-        } catch (e) {
-          console.warn("GitHub fetch failed, using localStorage/default", e);
-          loadFromStorage();
-          renderAll();
-          showToast("⚠️ Using local data (GitHub unavailable)", "info");
+    } catch (e) {
+      console.warn('GitHub fetch failed:', e);
+      if (force) {
+        showToast('⚠️ Failed to fetch from GitHub: ' + e.message, 'error');
+      }
+    }
+
+    isSyncing = false;
+  }
+
+  // ================================================================
+  // GITHUB PUSH
+  // ================================================================
+  async function autoPushToGitHub() {
+    syncFromDOM();
+    saveToStorage();
+
+    const token = typeof config !== 'undefined' && config.Github_Token ? config.Github_Token : null;
+
+    if (!token) {
+      showToast('⚠️ No GitHub token found in config.js', 'error');
+      console.error('GitHub token is missing. Add Github_Token to config.js');
+      return;
+    }
+
+    try {
+      const getUrl = `${CONFIG.API_URL}?t=${Date.now()}`;
+      const getResponse = await fetch(getUrl, {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': `token ${token}`,
+          'Cache-Control': 'no-cache'
         }
+      });
+
+      if (!getResponse.ok) {
+        const error = await getResponse.json();
+        throw new Error(`Failed to get file info: ${error.message || getResponse.status}`);
       }
 
+      const fileInfo = await getResponse.json();
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(state, null, 2))));
 
-           async function autoPushToGitHub() {
-        syncFromDOM();
-        saveToStorage();
+      const putResponse = await fetch(CONFIG.API_URL, {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `Update portfolio data - ${new Date().toLocaleString()}`,
+          content: content,
+          sha: fileInfo.sha
+        })
+      });
 
-        const TOKEN =
-          typeof config !== "undefined" && config.Github_Token
-            ? config.Github_Token
-            : null;
-        const OWNER = "Mr-Atanepes";
-        const REPO = "Atanepes-Gochmyradov";
-        const PATH = "data.json";
-        
-        // 1. Separation of concerns: Keep the base clean, use buster string ONLY on the GET path
-        const baseApiUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`;
-        const timestamp = Date.now();
-        const getApiUrl = `${baseApiUrl}?t=${timestamp}`;
-
-        const content = btoa(
-          unescape(encodeURIComponent(JSON.stringify(state, null, 2))),
-        );
-
-        try {
-          const headers = {
-            Accept: "application/vnd.github.v3+json",
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          };
-          if (TOKEN) headers.Authorization = `token ${TOKEN}`;
-
-          // 2. Fetch the fresh file metadata metadata string using the GET URL cache buster
-          const getRes = await fetch(getApiUrl, { headers });
-          if (!getRes.ok) throw new Error("Failed to fetch file info");
-          const getData = await getRes.json();
-
-          // 3. Send the write request to the clean base target URL structure without query hooks!
-          const putRes = await fetch(baseApiUrl, {
-            method: "PUT",
-            headers: {
-              ...headers,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              message: "Update portfolio data",
-              content: content,
-              sha: getData.sha, // Passes the 100% correct fresh hash index
-            }),
-          });
-
-          if (putRes.ok) {
-            showToast(
-              "✓ Published to GitHub — live in 1-2 minutes!",
-              "success",
-            );
-          } else {
-            const errData = await putRes.json();
-            showToast("⚠️ Push failed: " + errData.message, "error");
-          }
-        } catch (e) {
-          showToast("⚠️ Push failed — check console", "error");
-          console.error(e);
-        }
-      }
- function saveAndPublish() {
-        syncFromDOM();
-        saveToStorage();
-        renderAll();
-        autoPushToGitHub();
-        showToast("✓ Saved & Published — pushing to GitHub...", "success");
-      }
-      function downloadJSON() {
-        syncFromDOM();
-        saveToStorage();
-        const blob = new Blob([JSON.stringify(state, null, 2)], {
-          type: "application/json",
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "data.json";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showToast("✓ data.json downloaded — push to GitHub", "success");
-      }
-      function discardChanges() {
-        if (confirm("Discard unsaved changes?")) {
-          loadFromStorage();
-          renderAll();
-          showToast("↺ Changes discarded", "info");
-        }
-      }
-      function resetAllToDefault() {
-        if (confirm("Reset everything to default? This cannot be undone.")) {
-          state = JSON.parse(JSON.stringify(defaultState));
-          saveToStorage();
-          renderAll();
-          showToast("✓ Reset to default values", "info");
-        }
+      if (!putResponse.ok) {
+        const error = await putResponse.json();
+        throw new Error(`Push failed: ${error.message || putResponse.status}`);
       }
 
-          // ================================================================
-      // 1. ANTI-CORS BACKGROUND SYNC ENGINE (runs every 8 seconds)
-      // ================================================================
-      let lastFetchedContent = null;
+      const result = await putResponse.json();
+      lastRemoteUpdate = Date.now();
+      localStorage.setItem('portfolioRemoteUpdated', String(lastRemoteUpdate));
+      saveToStorage();
 
-      async function backgroundSync() {
-        // 2. ACTIVE ELEMENT SAFETY LOCK — pause if user is typing
-        const active = document.activeElement;
-        if (
-          active &&
-          (active.tagName === "INPUT" ||
-            active.tagName === "TEXTAREA" ||
-            active.getAttribute("contenteditable") === "true")
-        ) {
-          return; // pause sync to avoid wiping user's half‑typed text
-        }
+      showToast('✓ Published to GitHub successfully!', 'success');
+      console.log('✅ Push successful:', result.commit.html_url);
 
-        const OWNER = "Mr-Atanepes";
-        const REPO = "Atanepes-Gochmyradov";
-        const PATH = "data.json";
-        const timestamp = Date.now();
+      // Force a re-fetch to verify
+      setTimeout(() => fetchFromGitHub(true), 2000);
 
-        // 🌟 FIXED: Use ://githubusercontent.com. It handles cache-busting (?t=) perfectly without security locks!
-        const localPathUrl = `../data.json?t=${Date.now()}`;
+    } catch (e) {
+      console.error('Push failed:', e);
+      showToast(`⚠️ ${e.message}`, 'error');
+    }
+  }
 
-        try {
-          const response = await fetch(localPathUrl, {
-            headers: {
-              // 🌟 FIXED: Standard headers only to keep it clean and cross-browser safe
-              "Cache-Control": "no-cache, no-store, must-revalidate",
-              "Pragma": "no-cache",
-              "Expires": "0",
-            },
-          });
+  // ================================================================
+  // BACKGROUND SYNC
+  // ================================================================
+  async function backgroundSync() {
+    const active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' ||
+        active.tagName === 'TEXTAREA' ||
+        active.getAttribute('contenteditable') === 'true')) {
+      return;
+    }
 
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!isRemoteNewer()) {
+      console.log('Local data is newer or equal, skipping sync');
+      return;
+    }
 
-          // Read the raw text directly from the file
-          const fetchedText = await response.text();
-          const currentStateStr = JSON.stringify(state);
+    await fetchFromGitHub(false);
+  }
 
-          if (fetchedText === currentStateStr) {
-            // No change — update last known content and exit
-            lastFetchedContent = fetchedText;
-            return;
-          }
+  // ================================================================
+  // UI FUNCTIONS
+  // ================================================================
+  function showToast(message, type = 'info') {
+    const t = document.getElementById('toast');
+    t.textContent = message;
+    t.className = 'toast';
+    if (type === 'success') t.classList.add('success');
+    if (type === 'info') t.classList.add('info');
+    t.classList.add('show');
+    clearTimeout(t._timeout);
+    t._timeout = setTimeout(() => t.classList.remove('show'), 4000);
+  }
 
-          // Remote data changed → parse and merge
-          const fetchedData = JSON.parse(fetchedText);
-          const merged = { ...defaultState, ...fetchedData };
-          if (!merged.projects?.length)
-            merged.projects = [...defaultState.projects];
-          merged.projects = merged.projects.map((p) => ({
-            ...p,
-            id: p.id || Date.now() + Math.random(),
-          }));
+  function syncFromDOM() {
+    const master = document.getElementById('masterContent');
+    if (!master) return;
+    master.querySelectorAll('[data-field][contenteditable="true"]').forEach((el) => {
+      const f = el.getAttribute('data-field'),
+        v = el.innerText;
+      if (f in state) state[f] = v;
+    });
+  }
 
-          // Assign to global state, persist, and re‑render everything
-          state = merged;
-          saveToStorage();
-          renderAll(); // updates both Editor inputs and Preview components
-          showToast("🔄 Auto-synced with GitHub remote changes", "info");
-          lastFetchedContent = fetchedText;
-        } catch (e) {
-          console.warn("Background sync failed:", e);
-        }
-      }
-      // ================================================================
+  function saveAllChanges() {
+    syncFromDOM();
+    saveToStorage();
+    renderAll();
+    showToast('✓ All changes saved locally', 'success');
+  }
 
-      function generateHTML(isMaster) {
-        const attr = (f) =>
-          isMaster
-            ? `data-field="${f}" contenteditable="true" spellcheck="false"`
-            : `data-field="${f}"`;
-        const fSkills = state.frontendSkills
-          .map(
-            (s) =>
-              `<div class="skill-item"><div class="skill-icon">${s.icon}</div><div class="skill-info"><div class="skill-name" ${attr(`skill-${s.name}`)}>${s.name}</div><div class="skill-detail" ${attr(`skill-${s.name}-detail`)}>${s.detail}</div></div></div>`,
-          )
-          .join("");
-        const bSkills = state.backendSkills
-          .map(
-            (s) =>
-              `<div class="skill-item"><div class="skill-icon">${s.icon}</div><div class="skill-info"><div class="skill-name" ${attr(`skill-${s.name}`)}>${s.name}</div><div class="skill-detail" ${attr(`skill-${s.name}-detail`)}>${s.detail}</div></div></div>`,
-          )
-          .join("");
-        const dSkills = state.devopsSkills
-          .map(
-            (s) =>
-              `<div class="skill-item"><div class="skill-icon">${s.icon}</div><div class="skill-info"><div class="skill-name" ${attr(`skill-${s.name}`)}>${s.name}</div><div class="skill-detail" ${attr(`skill-${s.name}-detail`)}>${s.detail}</div></div></div>`,
-          )
-          .join("");
-        const expHtml = state.experience
-          .map(
-            (e, i) =>
-              `<div class="tl-item"><div class="tl-dot"></div><div class="tl-card"><div class="tl-header"><div><div class="tl-company" ${attr(`exp-company-${i}`)}>${e.company}</div><div class="tl-role" ${attr(`exp-role-${i}`)}>${e.role}</div></div><span class="tl-period" ${attr(`exp-period-${i}`)}>${e.period}</span></div><ul class="tl-list">${e.bullets.map((b, j) => `<li ${attr(`exp-bullet-${i}-${j}`)}>${b}</li>`).join("")}</ul></div></div>`,
-          )
-          .join("");
-        const projHtml = state.projects
-          .map((p) => {
-            const num = (state.projects.indexOf(p) + 1)
-              .toString()
-              .padStart(2, "0");
-            const tagsHTML = p.tags
-              .map(
-                (t) =>
-                  `<span class="tag ${t === "React" || t === "MongoDB" ? "gold" : ""}">${t}</span>`,
-              )
-              .join("");
-            const statusHTML =
-              p.status === "featured"
-                ? '<span class="tag gold">⭐ Featured</span>'
-                : p.status === "wip"
-                  ? '<span class="tag">🌱 WIP</span>'
-                  : "";
+  function saveAndPublish() {
+    syncFromDOM();
+    saveToStorage();
+    renderAll();
+    autoPushToGitHub();
+  }
 
-            const frontFace = `
-            <div class="project-card-front" style="position:relative;">
-              <div class="project-number">${num}</div>
-              <div class="project-name"
-                ${isMaster ? `contenteditable="true" spellcheck="false" onblur="updateProjectTemp(${p.id},'name',this.innerText)"` : ""}
-              >${p.name}</div>
-              <p class="project-desc"
-                ${isMaster ? `contenteditable="true" spellcheck="false" onblur="updateProjectTemp(${p.id},'desc',this.innerText)"` : ""}
-              >${p.desc}</p>
-              <div class="project-tags">${tagsHTML} ${statusHTML}</div>
-              <button class="flip-btn"
-                onclick="event.stopPropagation();${isMaster ? `flipCard(this.closest('.project-card'),${p.id})` : `this.closest('.project-card').classList.toggle('flipped')`}"
-                title="${isMaster ? "Flip to edit URLs" : "Flip card"}"
-              ><i class="fas fa-sync-alt"></i></button>
-            </div>`;
+  function downloadJSON() {
+    syncFromDOM();
+    saveToStorage();
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('✓ data.json downloaded', 'success');
+  }
 
-            const masterBackFace = `
-            <div class="project-card-back" style="position:relative;">
-              <button class="flip-btn"
+  function resetAllToDefault() {
+    if (confirm('Reset everything to default? This cannot be undone.')) {
+      state = JSON.parse(JSON.stringify(defaultState));
+      lastLocalUpdate = Date.now();
+      lastRemoteUpdate = 0;
+      saveToStorage();
+      renderAll();
+      showToast('✓ Reset to default values', 'info');
+    }
+  }
+
+  // ================================================================
+  // RENDER FUNCTIONS
+  // ================================================================
+  function generateHTML(isMaster) {
+    const attr = (f) =>
+      isMaster
+        ? `data-field="${f}" contenteditable="true" spellcheck="false"`
+        : `data-field="${f}"`;
+    
+    const fSkills = state.frontendSkills
+      .map((s) =>
+        `<div class="skill-item"><div class="skill-icon">${s.icon}</div><div class="skill-info"><div class="skill-name" ${attr(`skill-${s.name}`)}>${s.name}</div><div class="skill-detail" ${attr(`skill-${s.name}-detail`)}>${s.detail}</div></div></div>`
+      )
+      .join("");
+      
+    const bSkills = state.backendSkills
+      .map((s) =>
+        `<div class="skill-item"><div class="skill-icon">${s.icon}</div><div class="skill-info"><div class="skill-name" ${attr(`skill-${s.name}`)}>${s.name}</div><div class="skill-detail" ${attr(`skill-${s.name}-detail`)}>${s.detail}</div></div></div>`
+      )
+      .join("");
+      
+    const dSkills = state.devopsSkills
+      .map((s) =>
+        `<div class="skill-item"><div class="skill-icon">${s.icon}</div><div class="skill-info"><div class="skill-name" ${attr(`skill-${s.name}`)}>${s.name}</div><div class="skill-detail" ${attr(`skill-${s.name}-detail`)}>${s.detail}</div></div></div>`
+      )
+      .join("");
+      
+    const expHtml = state.experience
+      .map((e, i) =>
+        `<div class="tl-item"><div class="tl-dot"></div><div class="tl-card"><div class="tl-header"><div><div class="tl-company" ${attr(`exp-company-${i}`)}>${e.company}</div><div class="tl-role" ${attr(`exp-role-${i}`)}>${e.role}</div></div><span class="tl-period" ${attr(`exp-period-${i}`)}>${e.period}</span></div><ul class="tl-list">${e.bullets.map((b, j) => `<li ${attr(`exp-bullet-${i}-${j}`)}>${b}</li>`).join("")}</ul></div></div>`
+      )
+      .join("");
+
+    const projHtml = state.projects
+      .map((p) => {
+        const num = (state.projects.indexOf(p) + 1).toString().padStart(2, "0");
+        const tagsHTML = p.tags.map((t) =>
+          `<span class="tag ${t === "React" || t === "MongoDB" ? "gold" : ""}">${t}</span>`
+        ).join("");
+        const statusHTML = p.status === "featured"
+          ? '<span class="tag gold">⭐ Featured</span>'
+          : p.status === "wip" ? '<span class="tag">🌱 WIP</span>' : "";
+
+        const frontFace = `
+          <div class="project-card-front" style="position:relative;">
+            <div class="project-number">${num}</div>
+            <div class="project-name"
+              ${isMaster ? `contenteditable="true" spellcheck="false" onblur="updateProjectTemp(${p.id},'name',this.innerText)"` : ""}
+            >${p.name}</div>
+            <p class="project-desc"
+              ${isMaster ? `contenteditable="true" spellcheck="false" onblur="updateProjectTemp(${p.id},'desc',this.innerText)"` : ""}
+            >${p.desc}</p>
+            <div class="project-tags">${tagsHTML} ${statusHTML}</div>
+            <button class="flip-btn"
+              onclick="event.stopPropagation();${isMaster ? `flipCard(this.closest('.project-card'),${p.id})` : `this.closest('.project-card').classList.toggle('flipped')`}"
+              title="${isMaster ? "Flip to edit URLs" : "Flip card"}"
+            ><i class="fas fa-sync-alt"></i></button>
+          </div>`;
+
+        const masterBackFace = `
+          <div class="project-card-back" style="position:relative;">
+            <button class="flip-btn"
+              onclick="event.stopPropagation();flipCard(this.closest('.project-card'),${p.id})"
+              title="Flip back"
+            ><i class="fas fa-undo"></i></button>
+            <div style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--cyan);padding-right:40px;">
+              🔗 ${p.name}
+            </div>
+            <div class="edit-input-group" style="flex:1;">
+              <div>
+                <label><i class="fab fa-github"></i> GitHub Repository</label>
+                <input
+                  type="url"
+                  placeholder="https://github.com/username/repo"
+                  value="${p.github || ""}"
+                  onclick="event.stopPropagation()"
+                  oninput="updateProjectTemp(${p.id},'github',this.value)"
+                />
+              </div>
+              <div>
+                <label><i class="fas fa-external-link-alt"></i> Live Demo URL</label>
+                <input
+                  type="url"
+                  placeholder="https://your-demo.vercel.app"
+                  value="${p.demo || ""}"
+                  onclick="event.stopPropagation()"
+                  oninput="updateProjectTemp(${p.id},'demo',this.value)"
+                />
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;padding-top:1rem;border-top:1px solid var(--border);margin-top:auto;">
+              <button
+                onclick="event.stopPropagation();saveProjectUrls(${p.id})"
+                style="flex:1;padding:9px;background:var(--cyan);color:#000;border:none;border-radius:8px;cursor:pointer;font-family:var(--font-mono);font-size:0.72rem;font-weight:700;"
+              ><i class="fas fa-save"></i> Save URLs</button>
+              <button
                 onclick="event.stopPropagation();flipCard(this.closest('.project-card'),${p.id})"
-                title="Flip back"
-              ><i class="fas fa-undo"></i></button>
-
-              <div style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--cyan);padding-right:40px;">
-                🔗 ${p.name}
-              </div>
-
-              <div class="edit-input-group" style="flex:1;">
-                <div>
-                  <label><i class="fab fa-github"></i> GitHub Repository</label>
-                  <input
-                    type="url"
-                    placeholder="https://github.com/username/repo"
-                    value="${p.github || ""}"
-                    onclick="event.stopPropagation()"
-                    oninput="updateProjectTemp(${p.id},'github',this.value)"
-                  />
-                </div>
-                <div>
-                  <label><i class="fas fa-external-link-alt"></i> Live Demo URL</label>
-                  <input
-                    type="url"
-                    placeholder="https://your-demo.vercel.app"
-                    value="${p.demo || ""}"
-                    onclick="event.stopPropagation()"
-                    oninput="updateProjectTemp(${p.id},'demo',this.value)"
-                  />
-                </div>
-              </div>
-
-              <div style="display:flex;gap:8px;padding-top:1rem;border-top:1px solid var(--border);margin-top:auto;">
-                <button
-                  onclick="event.stopPropagation();saveProjectUrls(${p.id})"
-                  style="flex:1;padding:9px;background:var(--cyan);color:#000;border:none;border-radius:8px;cursor:pointer;font-family:var(--font-mono);font-size:0.72rem;font-weight:700;"
-                ><i class="fas fa-save"></i> Save URLs</button>
-                <button
-                  onclick="event.stopPropagation();flipCard(this.closest('.project-card'),${p.id})"
-                  style="flex:1;padding:9px;background:transparent;border:1px solid var(--border);color:var(--white);border-radius:8px;cursor:pointer;font-family:var(--font-mono);font-size:0.72rem;"
-                ><i class="fas fa-undo"></i> Flip Back</button>
-              </div>
-            </div>`;
-
-            const previewBackFace = `
-            <div class="project-card-back" style="position:relative;">
-              <button class="flip-btn"
-                onclick="event.stopPropagation();this.closest('.project-card').classList.toggle('flipped')"
-                title="Flip back"
-              ><i class="fas fa-undo"></i></button>
-              <div class="project-number" style="font-size:1.8rem;">${num}</div>
-              <div class="project-name">${p.name}</div>
-              <div class="project-tags">${tagsHTML} ${statusHTML}</div>
-              <div class="project-links" style="margin-top:auto;">
-                ${p.github ? `<a href="${p.github}" target="_blank" class="project-link-btn"><i class="fab fa-github"></i> Repository</a>` : ""}
-                ${p.demo ? `<a href="${p.demo}"   target="_blank" class="project-link-btn"><i class="fas fa-external-link-alt"></i> Live Demo</a>` : ""}
-              </div>
-            </div>`;
-
-            return `<div class="project-card">
-            <div class="project-card-inner">
-              ${frontFace}
-              ${isMaster ? masterBackFace : previewBackFace}
+                style="flex:1;padding:9px;background:transparent;border:1px solid var(--border);color:var(--white);border-radius:8px;cursor:pointer;font-family:var(--font-mono);font-size:0.72rem;"
+              ><i class="fas fa-undo"></i> Flip Back</button>
             </div>
           </div>`;
-          })
-          .join("");
-        const eduHtml = state.education
-          .map(
-            (e, i) =>
-              `<div class="edu-card"><div class="edu-icon">🎓</div><div class="edu-info"><div class="edu-degree" ${attr(`edu-degree-${i}`)}>${e.degree}</div><div class="edu-school" ${attr(`edu-school-${i}`)}>${e.school}</div><div class="edu-period" ${attr(`edu-period-${i}`)}>${e.period}</div></div></div>`,
-          )
-          .join("");
-        const bars = [
-          { n: "React & JavaScript", v: state.profReact },
-          { n: "HTML & CSS", v: state.profHTML },
-          { n: "Node.js / Express", v: state.profNode },
-          { n: "MongoDB", v: state.profMongo },
-          { n: "Docker / CI/CD", v: state.profDocker, c: "fill-beg" },
-        ]
-          .map(
-            (b) =>
-              `<div class="prof-item"><div class="prof-header"><span class="prof-name">${b.n}</span><span class="prof-lvl">${b.v}%</span></div><div class="prof-bar"><div class="prof-fill ${b.c || "fill-int"}" data-width="${b.v}"></div></div></div>`,
-          )
-          .join("");
-        const contactEmailHTML = isMaster
-          ? `<span class="contact-link"><div class="contact-link-icon">✉️</div><div class="contact-link-info"><div class="contact-link-label">Need a website?</div><div class="contact-link-sublabel" ${attr("email")}>${state.email}</div></div></span>`
-          : `<a href="mailto:${state.email}" class="contact-link"><div class="contact-link-icon">✉️</div><div class="contact-link-info"><div class="contact-link-label">Need a website?</div><div class="contact-link-sublabel">Let's talk</div></div></a>`;
-        const contactPhoneHTML = isMaster
-          ? `<span class="contact-link"><div class="contact-link-icon">📱</div><div class="contact-link-info"><div class="contact-link-label">Prefer a call?</div><div class="contact-link-sublabel" ${attr("phone")}>${state.phone}</div></div></span>`
-          : `<a href="tel:${state.phone}" class="contact-link"><div class="contact-link-icon">📱</div><div class="contact-link-info"><div class="contact-link-label">Prefer a call?</div><div class="contact-link-sublabel">Anytime</div></div></a>`;
-        const contactLocationHTML = `<div class="contact-link"><div class="contact-link-icon">📍</div><div class="contact-link-info"><div class="contact-link-label">My location</div><div class="contact-link-sublabel" ${attr("location")}>${state.location}</div></div></div>`;
 
-        const contactAvailHTML =
-          state.jobStatus === "available"
-            ? `<div class="availability"><div class="avail-dot"></div><span class="avail-text">Available for opportunities<br>${state.location}</span></div>`
-            : `<div class="availability" style="background:rgba(255,90,90,.08); border:1px solid rgba(255,90,90,.2);"><div class="avail-dot" style="background:#ff6b6b;"></div><span class="avail-text" style="color:#ff6b6b;">🔒 Currently employed<br>Not seeking opportunities</span></div>`;
-        return `<div class="orb orb-1"></div><div class="orb orb-2"></div><section id="hero"><div class="container"><div class="hero-grid"><div class="hero-content">${getBadgeHTML(isMaster)}<h1 class="hero-name"><span class="first-name glow-text" ${attr("firstName")}>${state.firstName}</span> <em class="glow-gold" ${attr("lastName")}>${state.lastName}</em></h1><div class="hero-title glow-gold" ${attr("title")}>${state.title}</div><p class="hero-desc" ${attr("tagline")}>${state.tagline}</p><div class="hero-ctas"><a href="#contact" class="btn-primary"><span>↗</span> Get In Touch</a><a href="#skills" class="btn-secondary"><span>⚡</span> View Skills</a></div></div><div class="hero-terminal"><div class="terminal-header"><div class="terminal-dot d-red"></div><div class="terminal-dot d-yellow"></div><div class="terminal-dot d-green"></div><span class="terminal-title">~/atanepes/portfolio ~ zsh</span></div><div class="terminal-body"><div class="t-line"><span class="t-prompt">❯</span><span class="t-cmd">node about.js</span></div><div class="t-line"><span class="t-out"><span class="t-key">name</span>: <span class="t-val glow-text" ${attr("terminalName")}>${state.terminalName}</span></span></div><div class="t-line"><span class="t-out"><span class="t-key">role</span>: <span class="t-val glow-cyan" ${attr("terminalRole")}>${state.terminalRole}</span></span></div><div class="t-line"><span class="t-out"><span class="t-key">level</span>: <span class="t-val" ${attr("terminalLevel")}>${state.terminalLevel}</span></span></div><div class="t-line"><span class="t-out"><span class="t-key">stack</span>: <span class="t-val glow-text" ${attr("terminalStack")}>${state.terminalStack}</span></span></div><div class="t-line"><span class="t-out"><span class="t-key">location</span>: <span class="t-val" ${attr("terminalLocation")}>${state.terminalLocation}</span></span></div><div class="t-line"><span class="t-out"><span class="t-key">languages</span>: <span class="t-val glow-cyan" ${attr("terminalLanguages")}>${state.terminalLanguages}</span></span></div><div style="margin-top:.4rem" class="t-line"><span class="t-prompt">❯</span><span class="typewriter-text glow-cyan">NeoCoder</span><span class="cursor"></span></div></div></div></div></div></section>
-                  <section id="about"><div class="container"><div class="sec-header"><div class="sec-eyebrow">01 — About</div><h2 class="sec-title">Who I <span class="glow-cyan">Am</span></h2></div><div class="about-grid"><div class="about-text"><p ${attr("aboutP1")}>${state.aboutP1}</p><p ${attr("aboutP2")}>${state.aboutP2}</p><p ${attr("aboutP3")}>${state.aboutP3}</p><div class="lang-chips"><span class="chip active">🇺🇸 English</span><span class="chip active">🇷🇴 Romanian</span><span class="chip active">🇷🇺 Russian</span><span class="chip active">🇹🇷 Turkish</span></div></div><div class="about-stats"><div class="stat-card"><div class="stat-number">3</div><div class="stat-label">Months Intensive Training</div></div><div class="stat-card"><div class="stat-number">4</div><div class="stat-label">Languages Spoken</div></div><div class="stat-card"><div class="stat-number">MERN</div><div class="stat-label">Primary Stack</div></div><div class="stat-card"><div class="stat-number">∞</div><div class="stat-label">Hunger to Learn</div></div><div style="grid-column: span 2;">${bars}</div></div></div></div></section>
-                  <section id="skills"><div class="container"><div class="sec-header"><div class="sec-eyebrow">02 — Skills</div><h2 class="sec-title">Tech <span class="glow-cyan">Stack</span></h2></div><div class="skills-categories"><div><div class="skill-cat-label">Frontend Development</div><div class="skills-grid">${fSkills}</div></div><div><div class="skill-cat-label">Backend Development</div><div class="skills-grid">${bSkills}</div></div><div><div class="skill-cat-label">DevOps & Tools</div><div class="skills-grid">${dSkills}</div></div></div>${isMaster ? `<div class="admin-only" style="display:flex;gap:8px;margin-top:20px"><select id="skillCategory" style="background:var(--bg);border:1px solid var(--border);color:var(--white);border-radius:8px;padding:8px;font-family:var(--font-mono);font-size:12px"><option value="frontend">Frontend</option><option value="backend">Backend</option><option value="devops">DevOps</option></select><input id="skillInput" placeholder="Add skill name" style="flex:1;padding:8px;background:var(--bg);border:1px solid var(--border);color:var(--white);border-radius:8px"><button onclick="addSkillTemp()" style="background:var(--cyan);color:#000;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;white-space:nowrap">Add</button></div>` : ""}</div></section>
-                  <section id="experience"><div class="container"><div class="sec-header"><div class="sec-eyebrow">03 — Experience</div><h2 class="sec-title">Professional <span class="glow-cyan">Journey</span></h2></div><div class="timeline">${expHtml}</div></div></section>
-                  <section id="projects"><div class="container"><div class="sec-header"><div class="sec-eyebrow">04 — Projects</div><h2 class="sec-title">Built <span class="glow-cyan">Things</span></h2></div><div class="projects-grid">${projHtml}</div>${isMaster ? `<button class="add-project-btn admin-only" style="margin-top:20px;" onclick="openAddModal()"><i class="fas fa-plus"></i> Add Project</button>` : ""}</div></section>
-                  <section id="education"><div class="container"><div class="sec-header"><div class="sec-eyebrow">05 — Education</div><h2 class="sec-title">Academic <span class="glow-cyan">Background</span></h2></div>${eduHtml}</div></section>
-                  <section id="contact"
-      ><div class="container"><div class="sec-header"><div class="sec-eyebrow">06 — Contact</div><h2 class="sec-title">Let's <span class="glow-cyan">Connect</span></h2></div><div class="contact-grid"><div>
-                    <p class="contact-intro">${state.jobStatus === "available" ? "I'm actively looking for my first professional role as a full-stack developer. Whether you have a project, a junior opening, or just want to chat — my inbox is open." : "I'm currently employed and not seeking new opportunities at this time. Feel free to connect for networking or future possibilities."}</p>${contactAvailHTML}</div><div class="contact-links">${contactEmailHTML}${contactPhoneHTML}${contactLocationHTML}</div></div></div></section>
-                     <footer style="border-top:1px solid var(--border); padding:2rem 5vw; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem; position:relative; z-index:1;">
-              <div style="font-family:var(--font-mono); font-size:0.7rem; color:var(--muted);">© ${new Date().getFullYear()} ${state.firstName} ${state.lastName}. All rights reserved.</div>
-              <div style="font-family:var(--font-mono); font-size:0.7rem; color:var(--muted);">Built with <span style="color:var(--cyan);">HTML · CSS · JS</span> — No frameworks needed.</div>
-            </footer>`;
-      }
-      function renderAll() {
-        document.getElementById("masterContent").innerHTML = generateHTML(true);
-        document.getElementById("slaveContent").innerHTML = generateHTML(false);
-        renderLayers();
+        const previewBackFace = `
+          <div class="project-card-back" style="position:relative;">
+            <button class="flip-btn"
+              onclick="event.stopPropagation();this.closest('.project-card').classList.toggle('flipped')"
+              title="Flip back"
+            ><i class="fas fa-undo"></i></button>
+            <div class="project-number" style="font-size:1.8rem;">${num}</div>
+            <div class="project-name">${p.name}</div>
+            <div class="project-tags">${tagsHTML} ${statusHTML}</div>
+            <div class="project-links" style="margin-top:auto;">
+              ${p.github ? `<a href="${p.github}" target="_blank" class="project-link-btn"><i class="fab fa-github"></i> Repository</a>` : ""}
+              ${p.demo ? `<a href="${p.demo}" target="_blank" class="project-link-btn"><i class="fas fa-external-link-alt"></i> Live Demo</a>` : ""}
+            </div>
+          </div>`;
 
-        if (flippedCardId !== null) {
-          document
-            .querySelectorAll("#masterContent .project-card")
-            .forEach((card) => {
-              const saveBtn = card.querySelector(
-                "[onclick*='saveProjectUrls']",
-              );
-              if (saveBtn) {
-                const m = saveBtn
-                  .getAttribute("onclick")
-                  .match(/saveProjectUrls\((\d+)\)/);
-                if (m && Number(m[1]) === flippedCardId)
-                  card.classList.add("flipped");
-              }
-            });
+        return `<div class="project-card">
+          <div class="project-card-inner">
+            ${frontFace}
+            ${isMaster ? masterBackFace : previewBackFace}
+          </div>
+        </div>`;
+      })
+      .join("");
+
+    const eduHtml = state.education
+      .map((e, i) =>
+        `<div class="edu-card"><div class="edu-icon">🎓</div><div class="edu-info"><div class="edu-degree" ${attr(`edu-degree-${i}`)}>${e.degree}</div><div class="edu-school" ${attr(`edu-school-${i}`)}>${e.school}</div><div class="edu-period" ${attr(`edu-period-${i}`)}>${e.period}</div></div></div>`
+      )
+      .join("");
+
+    const bars = [
+      { n: "React & JavaScript", v: state.profReact },
+      { n: "HTML & CSS", v: state.profHTML },
+      { n: "Node.js / Express", v: state.profNode },
+      { n: "MongoDB", v: state.profMongo },
+      { n: "Docker / CI/CD", v: state.profDocker, c: "fill-beg" },
+    ]
+      .map((b) =>
+        `<div class="prof-item"><div class="prof-header"><span class="prof-name">${b.n}</span><span class="prof-lvl">${b.v}%</span></div><div class="prof-bar"><div class="prof-fill ${b.c || "fill-int"}" data-width="${b.v}"></div></div></div>`
+      )
+      .join("");
+
+    const avail = state.jobStatus === "available";
+    const cls = avail ? "available" : "not-available";
+    const txt = avail ? "✨ Available for work" : "🔒 Currently employed • Not available";
+    const badgeHTML = isMaster
+      ? `<div class="hero-badge ${cls}" onclick="openStatusModal()">${txt} <button class="badge-edit-btn" onclick="event.stopPropagation();openStatusModal()"><i class="fas fa-pen"></i></button></div>`
+      : `<div class="hero-badge ${cls}">${txt}</div>`;
+
+    const contactEmailHTML = isMaster
+      ? `<span class="contact-link"><div class="contact-link-icon">✉️</div><div class="contact-link-info"><div class="contact-link-label">Need a website?</div><div class="contact-link-sublabel" ${attr("email")}>${state.email}</div></div></span>`
+      : `<a href="mailto:${state.email}" class="contact-link"><div class="contact-link-icon">✉️</div><div class="contact-link-info"><div class="contact-link-label">Need a website?</div><div class="contact-link-sublabel">Let's talk</div></div></a>`;
+      
+    const contactPhoneHTML = isMaster
+      ? `<span class="contact-link"><div class="contact-link-icon">📱</div><div class="contact-link-info"><div class="contact-link-label">Prefer a call?</div><div class="contact-link-sublabel" ${attr("phone")}>${state.phone}</div></div></span>`
+      : `<a href="tel:${state.phone}" class="contact-link"><div class="contact-link-icon">📱</div><div class="contact-link-info"><div class="contact-link-label">Prefer a call?</div><div class="contact-link-sublabel">Anytime</div></div></a>`;
+      
+    const contactLocationHTML = `<div class="contact-link"><div class="contact-link-icon">📍</div><div class="contact-link-info"><div class="contact-link-label">My location</div><div class="contact-link-sublabel" ${attr("location")}>${state.location}</div></div></div>`;
+
+    const contactAvailHTML = state.jobStatus === "available"
+      ? `<div class="availability"><div class="avail-dot"></div><span class="avail-text">Available for opportunities<br>${state.location}</span></div>`
+      : `<div class="availability" style="background:rgba(255,90,90,.08); border:1px solid rgba(255,90,90,.2);"><div class="avail-dot" style="background:#ff6b6b;"></div><span class="avail-text" style="color:#ff6b6b;">🔒 Currently employed<br>Not seeking opportunities</span></div>`;
+
+    return `<div class="orb orb-1"></div><div class="orb orb-2"></div>
+      <section id="hero"><div class="container"><div class="hero-grid"><div class="hero-content">${badgeHTML}
+      <h1 class="hero-name"><span class="first-name glow-text" ${attr("firstName")}>${state.firstName}</span> <em class="glow-gold" ${attr("lastName")}>${state.lastName}</em></h1>
+      <div class="hero-title glow-gold" ${attr("title")}>${state.title}</div>
+      <p class="hero-desc" ${attr("tagline")}>${state.tagline}</p>
+      <div class="hero-ctas"><a href="#contact" class="btn-primary"><span>↗</span> Get In Touch</a><a href="#skills" class="btn-secondary"><span>⚡</span> View Skills</a></div></div>
+      <div class="hero-terminal"><div class="terminal-header"><div class="terminal-dot d-red"></div><div class="terminal-dot d-yellow"></div><div class="terminal-dot d-green"></div><span class="terminal-title">~/atanepes/portfolio ~ zsh</span></div><div class="terminal-body">
+      <div class="t-line"><span class="t-prompt">❯</span><span class="t-cmd">node about.js</span></div>
+      <div class="t-line"><span class="t-out"><span class="t-key">name</span>: <span class="t-val glow-text" ${attr("terminalName")}>${state.terminalName}</span></span></div>
+      <div class="t-line"><span class="t-out"><span class="t-key">role</span>: <span class="t-val glow-cyan" ${attr("terminalRole")}>${state.terminalRole}</span></span></div>
+      <div class="t-line"><span class="t-out"><span class="t-key">level</span>: <span class="t-val" ${attr("terminalLevel")}>${state.terminalLevel}</span></span></div>
+      <div class="t-line"><span class="t-out"><span class="t-key">stack</span>: <span class="t-val glow-text" ${attr("terminalStack")}>${state.terminalStack}</span></span></div>
+      <div class="t-line"><span class="t-out"><span class="t-key">location</span>: <span class="t-val" ${attr("terminalLocation")}>${state.terminalLocation}</span></span></div>
+      <div class="t-line"><span class="t-out"><span class="t-key">languages</span>: <span class="t-val glow-cyan" ${attr("terminalLanguages")}>${state.terminalLanguages}</span></span></div>
+      <div style="margin-top:.4rem" class="t-line"><span class="t-prompt">❯</span><span class="typewriter-text glow-cyan">NeoCoder</span><span class="cursor"></span></div></div></div></div></div></section>
+      
+      <section id="about"><div class="container"><div class="sec-header"><div class="sec-eyebrow">01 — About</div><h2 class="sec-title">Who I <span class="glow-cyan">Am</span></h2></div><div class="about-grid"><div class="about-text"><p ${attr("aboutP1")}>${state.aboutP1}</p><p ${attr("aboutP2")}>${state.aboutP2}</p><p ${attr("aboutP3")}>${state.aboutP3}</p><div class="lang-chips"><span class="chip active">🇺🇸 English</span><span class="chip active">🇷🇴 Romanian</span><span class="chip active">🇷🇺 Russian</span><span class="chip active">🇹🇷 Turkish</span></div></div><div class="about-stats"><div class="stat-card"><div class="stat-number">3</div><div class="stat-label">Months Intensive Training</div></div><div class="stat-card"><div class="stat-number">4</div><div class="stat-label">Languages Spoken</div></div><div class="stat-card"><div class="stat-number">MERN</div><div class="stat-label">Primary Stack</div></div><div class="stat-card"><div class="stat-number">∞</div><div class="stat-label">Hunger to Learn</div></div><div style="grid-column: span 2;">${bars}</div></div></div></div></section>
+      
+      <section id="skills"><div class="container"><div class="sec-header"><div class="sec-eyebrow">02 — Skills</div><h2 class="sec-title">Tech <span class="glow-cyan">Stack</span></h2></div><div class="skills-categories"><div><div class="skill-cat-label">Frontend Development</div><div class="skills-grid">${fSkills}</div></div><div><div class="skill-cat-label">Backend Development</div><div class="skills-grid">${bSkills}</div></div><div><div class="skill-cat-label">DevOps & Tools</div><div class="skills-grid">${dSkills}</div></div></div>${isMaster ? `<div class="admin-only" style="display:flex;gap:8px;margin-top:20px"><select id="skillCategory" style="background:var(--bg);border:1px solid var(--border);color:var(--white);border-radius:8px;padding:8px;font-family:var(--font-mono);font-size:12px"><option value="frontend">Frontend</option><option value="backend">Backend</option><option value="devops">DevOps</option></select><input id="skillInput" placeholder="Add skill name" style="flex:1;padding:8px;background:var(--bg);border:1px solid var(--border);color:var(--white);border-radius:8px"><button onclick="addSkillTemp()" style="background:var(--cyan);color:#000;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;white-space:nowrap">Add</button></div>` : ""}</div></section>
+      
+      <section id="experience"><div class="container"><div class="sec-header"><div class="sec-eyebrow">03 — Experience</div><h2 class="sec-title">Professional <span class="glow-cyan">Journey</span></h2></div><div class="timeline">${expHtml}</div></div></section>
+      
+      <section id="projects"><div class="container"><div class="sec-header"><div class="sec-eyebrow">04 — Projects</div><h2 class="sec-title">Built <span class="glow-cyan">Things</span></h2></div><div class="projects-grid">${projHtml}</div>${isMaster ? `<button class="add-project-btn admin-only" style="margin-top:20px;" onclick="openAddModal()"><i class="fas fa-plus"></i> Add Project</button>` : ""}</div></section>
+      
+      <section id="education"><div class="container"><div class="sec-header"><div class="sec-eyebrow">05 — Education</div><h2 class="sec-title">Academic <span class="glow-cyan">Background</span></h2></div>${eduHtml}</div></section>
+      
+      <section id="contact"><div class="container"><div class="sec-header"><div class="sec-eyebrow">06 — Contact</div><h2 class="sec-title">Let's <span class="glow-cyan">Connect</span></h2></div><div class="contact-grid"><div><p class="contact-intro">${state.jobStatus === "available" ? "I'm actively looking for my first professional role as a full-stack developer. Whether you have a project, a junior opening, or just want to chat — my inbox is open." : "I'm currently employed and not seeking new opportunities at this time. Feel free to connect for networking or future possibilities."}</p>${contactAvailHTML}</div><div class="contact-links">${contactEmailHTML}${contactPhoneHTML}${contactLocationHTML}</div></div></div></section>
+      
+      <footer style="border-top:1px solid var(--border); padding:2rem 5vw; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem; position:relative; z-index:1;">
+        <div style="font-family:var(--font-mono); font-size:0.7rem; color:var(--muted);">© ${new Date().getFullYear()} ${state.firstName} ${state.lastName}. All rights reserved.</div>
+        <div style="font-family:var(--font-mono); font-size:0.7rem; color:var(--muted);">Built with <span style="color:var(--cyan);">HTML · CSS · JS</span> — No frameworks needed.</div>
+      </footer>`;
+  }
+
+  function renderAll() {
+    const timestamps = getTimestamp();
+    const localTime = timestamps.local ? new Date(timestamps.local).toLocaleTimeString() : 'Never';
+    const remoteTime = timestamps.remote ? new Date(timestamps.remote).toLocaleTimeString() : 'Never';
+
+    let existing = document.getElementById('syncStatusBar');
+    if (existing) existing.remove();
+
+    const masterPane = document.getElementById('masterContent');
+    if (masterPane) {
+      const statusBar = document.createElement('div');
+      statusBar.id = 'syncStatusBar';
+      statusBar.style.cssText = `
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--muted);
+        padding: 4px 12px;
+        background: var(--bg2);
+        border-radius: 4px;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid var(--border);
+        flex-wrap: wrap;
+        gap: 4px;
+      `;
+      statusBar.innerHTML = `
+        <span>🔄 Local: ${localTime}</span>
+        <span>🌐 Remote: ${remoteTime}</span>
+        <span>${isRemoteNewer() ? '⬇️ Remote has updates' : '✅ Up to date'}</span>
+        <button onclick="fetchFromGitHub(true)" style="background:var(--cyan);color:#000;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:10px;">↻ Sync Now</button>
+      `;
+      masterPane.prepend(statusBar);
+    }
+
+    document.getElementById('masterContent').innerHTML += generateHTML(true);
+    document.getElementById('slaveContent').innerHTML = generateHTML(false);
+    renderLayers();
+
+    if (flippedCardId !== null) {
+      document.querySelectorAll('#masterContent .project-card').forEach((card) => {
+        const saveBtn = card.querySelector("[onclick*='saveProjectUrls']");
+        if (saveBtn) {
+          const m = saveBtn.getAttribute('onclick').match(/saveProjectUrls\((\d+)\)/);
+          if (m && Number(m[1]) === flippedCardId) card.classList.add('flipped');
         }
-
-        setTimeout(
-          () =>
-            document.querySelectorAll(".prof-fill").forEach((b) => {
-              if (b.dataset.width) b.style.width = b.dataset.width + "%";
-            }),
-          100,
-        );
-      }
-      function saveProjectUrls(id) {
-        flippedCardId = id;
-        saveToStorage();
-        renderAll();
-        showToast("✓ Project URLs saved successfully", "success");
-      }
-      function flipCard(cardEl, projectId) {
-        const opening = !cardEl.classList.contains("flipped");
-        cardEl.classList.toggle("flipped");
-        flippedCardId = opening ? projectId : null;
-      }
-      function renderLayers() {
-        document.getElementById("layersList").innerHTML = state.projects
-          .map(
-            (p) =>
-              `<div class="layer-item${selectedProjectId === p.id ? " active" : ""}" onclick="selectProject(${p.id})"><i class="fas fa-folder"></i><span>${p.name}</span><div class="layer-item-actions"><button onclick="event.stopPropagation();openEditModal(${p.id})"><i class="fas fa-pen"></i></button><button onclick="event.stopPropagation();deleteProjectTemp(${p.id})"><i class="fas fa-trash"></i></button></div></div>`,
-          )
-          .join("");
-      }
-      function deleteProjectTemp(id) {
-        state.projects = state.projects.filter((p) => p.id !== id);
-        if (selectedProjectId === id) selectedProjectId = null;
-        renderAll();
-      }
-      function selectProject(id) {
-        selectedProjectId = selectedProjectId === id ? null : id;
-        renderLayers();
-
-        const projectCard = document.querySelector(
-          `#masterContent .project-card:nth-child(${state.projects.findIndex((p) => p.id === id) + 1})`,
-        );
-        if (projectCard) {
-          projectCard.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      }
-      function openAddModal() {
-        editingId = null;
-        document.getElementById("modalTitle").innerText = "Add New Project";
-        ["fName", "fDesc", "fGithub", "fDemo", "fTags"].forEach(
-          (id) => (document.getElementById(id).value = ""),
-        );
-        document.getElementById("fStatus").value = "featured";
-        document.getElementById("modal").classList.add("open");
-      }
-      function closeModal() {
-        document.getElementById("modal").classList.remove("open");
-      }
-      function saveProject() {
-        const n = document.getElementById("fName").value.trim();
-        if (!n) return;
-        const d = {
-          id: Date.now(),
-          name: n,
-          desc: document.getElementById("fDesc").value,
-          github: document.getElementById("fGithub").value,
-          demo: document.getElementById("fDemo").value,
-          tags: document
-            .getElementById("fTags")
-            .value.split(",")
-            .map((t) => t.trim())
-            .filter(Boolean),
-          status: document.getElementById("fStatus").value,
-        };
-        state.projects.push(d);
-        closeModal();
-        renderAll();
-      }
-      function openEditModal(id) {
-        const p = state.projects.find((p) => p.id === id);
-        if (!p) return;
-        editingId = id;
-        document.getElementById("modalTitle").innerText = "Edit Project";
-        document.getElementById("fName").value = p.name;
-        document.getElementById("fDesc").value = p.desc;
-        document.getElementById("fGithub").value = p.github || "";
-        document.getElementById("fDemo").value = p.demo || "";
-        document.getElementById("fTags").value = p.tags.join(", ");
-        document.getElementById("fStatus").value = p.status;
-        document.getElementById("modal").classList.add("open");
-      }
-      function setView(m) {
-        document.getElementById("editorLayout").setAttribute("data-view", m);
-        // update desktop pills
-        document
-          .querySelectorAll(".mode-pill")
-          .forEach((b) =>
-            b.classList.toggle("active", b.getAttribute("data-view") === m),
-          );
-        // update mobile toggle (custom buttons)
-        const toggle = document.getElementById("mobileToggle");
-        if (toggle) {
-          toggle.querySelectorAll("button").forEach((btn) => {
-            btn.classList.toggle("active", btn.getAttribute("data-view") === m);
-          });
-        }
-        closeSidebar();
-      }
-      function scrollToSection(id) {
-        const el = document.querySelector(`#masterContent #${id}`);
-        if (el) el.scrollIntoView({ behavior: "smooth" });
-        closeSidebar();
-      }
-      function toggleTheme() {
-        const h = document.documentElement,
-          nt = h.getAttribute("data-theme") === "dark" ? "light" : "dark";
-        h.setAttribute("data-theme", nt);
-        document.getElementById("themeIcon").className =
-          nt === "dark" ? "fas fa-moon" : "fas fa-sun";
-        localStorage.setItem("theme", nt);
-      }
-      function showToast(m, type) {
-        const t = document.getElementById("toast");
-        t.textContent = m;
-        t.className = "toast";
-        if (type === "success") t.classList.add("success");
-        if (type === "info") t.classList.add("info");
-        if (!type) t.classList.add("warning");
-        t.classList.add("show");
-        clearTimeout(t._timeout);
-        t._timeout = setTimeout(() => t.classList.remove("show"), 4000);
-      }
-      function filterLayers(q) {
-        const ql = q.toLowerCase();
-        document
-          .querySelectorAll("#layersList .layer-item")
-          .forEach(
-            (el) =>
-              (el.style.display = el.textContent.toLowerCase().includes(ql)
-                ? ""
-                : "none"),
-          );
-      }
-      function openSidebar() {
-        document.getElementById("sidebar").classList.add("open");
-        document.getElementById("sidebarOverlay").classList.add("open");
-      }
-      function closeSidebar() {
-        document.getElementById("sidebar").classList.remove("open");
-        document.getElementById("sidebarOverlay").classList.remove("open");
-      }
-      document.addEventListener("DOMContentLoaded", () => {
-        loadFromStorage();
-        const savedTheme = localStorage.getItem("theme") || "dark";
-        document.documentElement.setAttribute("data-theme", savedTheme);
-        document.getElementById("themeIcon").className =
-          savedTheme === "dark" ? "fas fa-moon" : "fas fa-sun";
-        renderAll();
-        fetchFromGitHub();
-
-        // Desktop mode pills
-        document
-          .querySelectorAll(".mode-pill")
-          .forEach((b) =>
-            b.addEventListener("click", () =>
-              setView(b.getAttribute("data-view")),
-            ),
-          );
-
-        // ===== Custom mobile toggle: Edit / Preview =====
-        document
-          .querySelectorAll("#mobileToggle button")
-          .forEach((btn) =>
-            btn.addEventListener("click", () =>
-              setView(btn.getAttribute("data-view")),
-            ),
-          );
-
-        document
-          .getElementById("menuToggle")
-          .addEventListener("click", openSidebar);
-        document
-          .getElementById("sidebarOverlay")
-          .addEventListener("click", closeSidebar);
-        window.addEventListener("resize", () => {
-          if (window.innerWidth > 768) closeSidebar();
-        });
-        if (window.innerWidth <= 768) {
-          setView("master");
-        }
-
-        const masterContent = document.getElementById("masterContent");
-        masterContent.addEventListener("input", function (e) {
-          const el = e.target;
-          if (
-            el.hasAttribute("data-field") ||
-            el.hasAttribute("contenteditable")
-          ) {
-            const toast = document.getElementById("toast");
-            toast.textContent = "⚠️ Unsaved changes — Save from Settings ⚙️";
-            toast.className = "toast warning show";
-            clearTimeout(toast._timeout);
-            toast._timeout = setTimeout(() => {
-              toast.classList.remove("show");
-            }, 5000);
-          }
-        });
-
-        masterContent.addEventListener("keyup", function (e) {
-          const el = e.target;
-          if (
-            el.hasAttribute("data-field") ||
-            el.hasAttribute("contenteditable")
-          ) {
-            const fieldName = el.getAttribute("data-field");
-            const newValue = el.innerText;
-
-            const slaveEl = document.querySelector(
-              `#slaveContent [data-field="${fieldName}"]`,
-            );
-            if (slaveEl) {
-              slaveEl.textContent = newValue;
-            }
-
-            if (fieldName in state) {
-              state[fieldName] = newValue;
-            }
-          }
-        });
-
-        const settingsToggle = document.getElementById("settingsToggle");
-        const settingsDropdown = document.getElementById("settingsDropdown");
-        settingsToggle.addEventListener("click", (e) => {
-          e.stopPropagation();
-          settingsDropdown.classList.toggle("open");
-        });
-        document.addEventListener("click", (e) => {
-          if (
-            !settingsDropdown.contains(e.target) &&
-            e.target !== settingsToggle
-          ) {
-            settingsDropdown.classList.remove("open");
-          }
-        });
-
-        // ================================================================
-        // START BACKGROUND SYNC — every 8 seconds
-        // ================================================================
-        setTimeout(backgroundSync, 2000);
-        setInterval(backgroundSync, 8000); // ← 8 seconds as required
-        // ================================================================
       });
-    </script>
+    }
+
+    setTimeout(() => {
+      document.querySelectorAll('.prof-fill').forEach((b) => {
+        if (b.dataset.width) b.style.width = b.dataset.width + '%';
+      });
+    }, 100);
+  }
+
+  function renderLayers() {
+    document.getElementById('layersList').innerHTML = state.projects
+      .map((p) =>
+        `<div class="layer-item${selectedProjectId === p.id ? " active" : ""}" onclick="selectProject(${p.id})"><i class="fas fa-folder"></i><span>${p.name}</span><div class="layer-item-actions"><button onclick="event.stopPropagation();openEditModal(${p.id})"><i class="fas fa-pen"></i></button><button onclick="event.stopPropagation();deleteProjectTemp(${p.id})"><i class="fas fa-trash"></i></button></div></div>`
+      )
+      .join('');
+  }
+
+  function selectProject(id) {
+    selectedProjectId = selectedProjectId === id ? null : id;
+    renderLayers();
+    const projectCard = document.querySelector(`#masterContent .project-card:nth-child(${state.projects.findIndex((p) => p.id === id) + 1})`);
+    if (projectCard) {
+      projectCard.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+
+  function deleteProjectTemp(id) {
+    state.projects = state.projects.filter((p) => p.id !== id);
+    if (selectedProjectId === id) selectedProjectId = null;
+    renderAll();
+  }
+
+  function updateProjectTemp(id, field, val) {
+    const p = state.projects.find((p) => p.id === id);
+    if (p) p[field] = val;
+    renderLayers();
+  }
+
+  function saveProjectUrls(id) {
+    flippedCardId = id;
+    saveToStorage();
+    renderAll();
+    showToast('✓ Project URLs saved successfully', 'success');
+  }
+
+  function flipCard(cardEl, projectId) {
+    const opening = !cardEl.classList.contains('flipped');
+    cardEl.classList.toggle('flipped');
+    flippedCardId = opening ? projectId : null;
+  }
+
+  function openAddModal() {
+    editingId = null;
+    document.getElementById('modalTitle').innerText = "Add New Project";
+    ['fName', 'fDesc', 'fGithub', 'fDemo', 'fTags'].forEach((id) =>
+      document.getElementById(id).value = ''
+    );
+    document.getElementById('fStatus').value = 'featured';
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function openEditModal(id) {
+    const p = state.projects.find((p) => p.id === id);
+    if (!p) return;
+    editingId = id;
+    document.getElementById('modalTitle').innerText = "Edit Project";
+    document.getElementById('fName').value = p.name;
+    document.getElementById('fDesc').value = p.desc;
+    document.getElementById('fGithub').value = p.github || '';
+    document.getElementById('fDemo').value = p.demo || '';
+    document.getElementById('fTags').value = p.tags.join(', ');
+    document.getElementById('fStatus').value = p.status;
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+  }
+
+  function saveProject() {
+    const n = document.getElementById('fName').value.trim();
+    if (!n) return;
+    const d = {
+      id: Date.now(),
+      name: n,
+      desc: document.getElementById('fDesc').value,
+      github: document.getElementById('fGithub').value,
+      demo: document.getElementById('fDemo').value,
+      tags: document.getElementById('fTags').value.split(',').map((t) => t.trim()).filter(Boolean),
+      status: document.getElementById('fStatus').value,
+    };
+    state.projects.push(d);
+    closeModal();
+    renderAll();
+  }
+
+  function addSkillTemp() {
+    const inp = document.getElementById('skillInput');
+    const cat = document.getElementById('skillCategory');
+    if (inp && inp.value.trim()) {
+      const newSkill = {
+        name: inp.value.trim(),
+        detail: "Custom skill",
+        icon: "🛠️",
+      };
+      const category = cat ? cat.value : "frontend";
+      if (category === "backend") state.backendSkills.push(newSkill);
+      else if (category === "devops") state.devopsSkills.push(newSkill);
+      else state.frontendSkills.push(newSkill);
+      renderAll();
+      inp.value = '';
+      showToast('✓ Skill added', 'success');
+    }
+  }
+
+  function openStatusModal() {
+    pendingStatus = state.jobStatus;
+    document.getElementById('statusAvailable').classList.toggle('selected', state.jobStatus === 'available');
+    document.getElementById('statusNotAvailable').classList.toggle('selected', state.jobStatus !== 'available');
+    document.getElementById('statusModal').classList.add('open');
+  }
+
+  function selectStatus(s) {
+    pendingStatus = s;
+    const a = document.getElementById('statusAvailable'),
+      na = document.getElementById('statusNotAvailable');
+    if (s === 'available') {
+      a.classList.add('selected');
+      na.classList.remove('selected');
+    } else {
+      na.classList.add('selected');
+      a.classList.remove('selected');
+    }
+  }
+
+  function applyStatus() {
+    if (pendingStatus) {
+      state.jobStatus = pendingStatus;
+      renderAll();
+      showToast('Status updated', 'success');
+    }
+    closeStatusModal();
+  }
+
+  function closeStatusModal() {
+    document.getElementById('statusModal').classList.remove('open');
+  }
+
+  function setView(m) {
+    document.getElementById('editorLayout').setAttribute('data-view', m);
+    document.querySelectorAll('.mode-pill').forEach((b) =>
+      b.classList.toggle('active', b.getAttribute('data-view') === m)
+    );
+    const toggle = document.getElementById('mobileToggle');
+    if (toggle) {
+      toggle.querySelectorAll('button').forEach((btn) => {
+        btn.classList.toggle('active', btn.getAttribute('data-view') === m);
+      });
+    }
+    closeSidebar();
+  }
+
+  function scrollToSection(id) {
+    const el = document.querySelector(`#masterContent #${id}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    closeSidebar();
+  }
+
+  function toggleTheme() {
+    const h = document.documentElement,
+      nt = h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    h.setAttribute('data-theme', nt);
+    document.getElementById('themeIcon').className = nt === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+    localStorage.setItem('theme', nt);
+  }
+
+  function openSidebar() {
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('sidebarOverlay').classList.add('open');
+  }
+
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('open');
+  }
+
+  // ================================================================
+  // BOOT
+  // ================================================================
+  document.addEventListener('DOMContentLoaded', () => {
+    loadFromStorage();
+
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+
+    if (localStorage.getItem('editor_unlocked') === 'true') {
+      const gate = document.getElementById('loginGate');
+      if (gate) gate.classList.add('hidden');
+      setTimeout(showAdminControls, 100);
+    }
+
+    renderAll();
+    setTimeout(() => fetchFromGitHub(true), 1000);
+    setInterval(backgroundSync, CONFIG.POLL_INTERVAL);
+
+    document.querySelectorAll('.mode-pill').forEach((b) =>
+      b.addEventListener('click', () => setView(b.getAttribute('data-view')))
+    );
+
+    document.querySelectorAll('#mobileToggle button').forEach((btn) =>
+      btn.addEventListener('click', () => setView(btn.getAttribute('data-view')))
+    );
+
+    document.getElementById('menuToggle').addEventListener('click', openSidebar);
+    document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) closeSidebar();
+    });
+
+    if (window.innerWidth <= 768) {
+      setView('master');
+    }
+
+    const masterContent = document.getElementById('masterContent');
+    masterContent.addEventListener('input', function(e) {
+      const el = e.target;
+      if (el.hasAttribute('data-field') || el.hasAttribute('contenteditable')) {
+        clearTimeout(window._saveTimeout);
+        window._saveTimeout = setTimeout(() => {
+          syncFromDOM();
+          saveToStorage();
+        }, 2000);
+      }
+    });
+
+    const settingsToggle = document.getElementById('settingsToggle');
+    const settingsDropdown = document.getElementById('settingsDropdown');
+    settingsToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      settingsDropdown.classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!settingsDropdown.contains(e.target) && e.target !== settingsToggle) {
+        settingsDropdown.classList.remove('open');
+      }
+    });
+  });
+</script>
   </body>
 </html>
