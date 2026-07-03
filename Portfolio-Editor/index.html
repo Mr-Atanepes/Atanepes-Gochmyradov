@@ -2551,15 +2551,23 @@
   // ================================================================
   // CONFIGURATION
   // ================================================================
-  const CONFIG = {
-    GITHUB_OWNER: 'Mr-Atanepes',
-    GITHUB_REPO: 'Atanepes-Gochmyradov',
-    GITHUB_PATH: 'data.json',
-    RAW_URL: 'https://raw.githubusercontent.com/Mr-Atanepes/Atanepes-Gochmyradov/main/data.json',
-    API_URL: 'https://api.github.com/repos/Mr-Atanepes/Atanepes-Gochmyradov/contents/data.json',
-    POLL_INTERVAL: 10000,
-  };
-
+  // const CONFIG = {
+  //   GITHUB_OWNER: 'Mr-Atanepes',
+  //   GITHUB_REPO: 'Atanepes-Gochmyradov',
+  //   GITHUB_PATH: 'data.json',
+  //   RAW_URL: 'https://raw.githubusercontent.com/Mr-Atanepes/Atanepes-Gochmyradov/main/data.json',
+  //   API_URL: 'https://api.github.com/repos/Mr-Atanepes/Atanepes-Gochmyradov/contents/data.json',
+  //   POLL_INTERVAL: 10000,
+  // };
+const CONFIG = {
+  GITHUB_OWNER: 'Mr-Atanepes',
+  GITHUB_REPO: 'Atanepes-Gochmyradov',
+  GITHUB_PATH: 'data.json',
+  // 🔥 FIX: Use relative path to avoid CORS
+  RAW_URL: '../data.json',  // Since editor is in Portfolio-Editor folder
+  API_URL: 'https://api.github.com/repos/Mr-Atanepes/Atanepes-Gochmyradov/contents/data.json',
+  POLL_INTERVAL: 10000,
+};
   // ================================================================
   // PASSWORD / LOGIN
   // ================================================================
