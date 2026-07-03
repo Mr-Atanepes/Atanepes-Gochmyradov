@@ -2547,27 +2547,22 @@
     </div>
     <div class="toast" id="toast"></div>
 
- <script>
+<script>
   // ================================================================
   // CONFIGURATION
   // ================================================================
-  // const CONFIG = {
-  //   GITHUB_OWNER: 'Mr-Atanepes',
-  //   GITHUB_REPO: 'Atanepes-Gochmyradov',
-  //   GITHUB_PATH: 'data.json',
-  //   RAW_URL: 'https://raw.githubusercontent.com/Mr-Atanepes/Atanepes-Gochmyradov/main/data.json',
-  //   API_URL: 'https://api.github.com/repos/Mr-Atanepes/Atanepes-Gochmyradov/contents/data.json',
-  //   POLL_INTERVAL: 10000,
-  // };
-const CONFIG = {
-  GITHUB_OWNER: 'Mr-Atanepes',
-  GITHUB_REPO: 'Atanepes-Gochmyradov',
-  GITHUB_PATH: 'data.json',
-  // 🔥 FIX: Use relative path to avoid CORS
-  RAW_URL: '../data.json',  // Since editor is in Portfolio-Editor folder
-  API_URL: 'https://api.github.com/repos/Mr-Atanepes/Atanepes-Gochmyradov/contents/data.json',
-  POLL_INTERVAL: 10000,
-};
+  const CONFIG = {
+    GITHUB_OWNER: 'Mr-Atanepes',
+    GITHUB_REPO: 'Atanepes-Gochmyradov',
+    GITHUB_PATH: 'data.json',
+    // ✅ FIXED: Use relative path (editor is in Portfolio-Editor folder)
+    RAW_URL: '../data.json',
+    API_URL: 'https://api.github.com/repos/Mr-Atanepes/Atanepes-Gochmyradov/contents/data.json',
+    POLL_INTERVAL: 10000,
+  };
+
+  console.log('✅ CONFIG loaded with RAW_URL:', CONFIG.RAW_URL);
+
   // ================================================================
   // PASSWORD / LOGIN
   // ================================================================
@@ -2590,7 +2585,11 @@ const CONFIG = {
       localStorage.setItem('editor_unlocked', 'true');
       showAdminControls();
       setTimeout(() => showToast('✓ Admin mode unlocked', 'success'), 200);
-      setTimeout(() => fetchFromGitHub(true), 500);
+      // Force sync after login with delay
+      setTimeout(() => {
+        console.log('🔄 Fetching data.json after login...');
+        fetchFromGitHub(true);
+      }, 1000);
     } else {
       document.getElementById('loginError').classList.add('show');
     }
@@ -2752,14 +2751,20 @@ const CONFIG = {
   }
 
   // ================================================================
-  // GITHUB FETCH
+  // GITHUB FETCH - FIXED VERSION
   // ================================================================
   async function fetchFromGitHub(force = false) {
-    if (isSyncing) return;
+    if (isSyncing) {
+      console.log('⏳ Already syncing, skipping...');
+      return;
+    }
     isSyncing = true;
 
     try {
-      const url = `${CONFIG.RAW_URL}?t=${Date.now()}`;
+      // ✅ Use the correct path - same as what worked in the test
+      const url = `../data.json?t=${Date.now()}`;
+      console.log('🔄 Attempting to fetch from:', url);
+      
       const response = await fetch(url, {
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -2768,13 +2773,23 @@ const CONFIG = {
         }
       });
 
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) {
+        console.error('❌ Fetch failed with status:', response.status);
+        throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+      }
 
       const remoteData = await response.json();
+      console.log('✅ Successfully fetched data.json');
+      console.log('📊 Data preview:', {
+        firstName: remoteData.firstName,
+        title: remoteData.title,
+        projects: remoteData.projects?.length || 0
+      });
+      
       const remoteTimestamp = parseInt(localStorage.getItem('portfolioRemoteUpdated')) || 0;
 
       if (!force && remoteTimestamp <= lastLocalUpdate) {
-        console.log('Remote data is older than local, skipping sync');
+        console.log('ℹ️ Remote data is older than local, skipping sync');
         isSyncing = false;
         return;
       }
@@ -2795,10 +2810,13 @@ const CONFIG = {
         saveToStorage();
         renderAll();
         showToast('✓ Synced with GitHub', 'success');
+        console.log('✅ State updated successfully');
+      } else {
+        console.log('ℹ️ No changes detected');
       }
 
     } catch (e) {
-      console.warn('GitHub fetch failed:', e);
+      console.error('❌ GitHub fetch failed:', e);
       if (force) {
         showToast('⚠️ Failed to fetch from GitHub: ' + e.message, 'error');
       }
@@ -2867,7 +2885,6 @@ const CONFIG = {
       showToast('✓ Published to GitHub successfully!', 'success');
       console.log('✅ Push successful:', result.commit.html_url);
 
-      // Force a re-fetch to verify
       setTimeout(() => fetchFromGitHub(true), 2000);
 
     } catch (e) {
@@ -3396,7 +3413,11 @@ const CONFIG = {
   // BOOT
   // ================================================================
   document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Editor booting up...');
+    console.log('📁 CONFIG.RAW_URL:', CONFIG.RAW_URL);
+    
     loadFromStorage();
+    console.log('📦 State loaded from storage');
 
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -3409,8 +3430,17 @@ const CONFIG = {
     }
 
     renderAll();
-    setTimeout(() => fetchFromGitHub(true), 1000);
+    console.log('🎨 UI rendered');
+
+    // Try to fetch data.json after a delay
+    setTimeout(() => {
+      console.log('🔄 Initial fetch of data.json...');
+      fetchFromGitHub(true);
+    }, 1500);
+
+    // Start background sync
     setInterval(backgroundSync, CONFIG.POLL_INTERVAL);
+    console.log(`⏰ Background sync started (every ${CONFIG.POLL_INTERVAL/1000}s)`);
 
     document.querySelectorAll('.mode-pill').forEach((b) =>
       b.addEventListener('click', () => setView(b.getAttribute('data-view')))
@@ -3454,7 +3484,10 @@ const CONFIG = {
         settingsDropdown.classList.remove('open');
       }
     });
+
+    console.log('✅ Editor boot complete!');
   });
-</script>
-  </body>
+
+  console.log('📄 Script loaded successfully');
+</script>  </body>
 </html>
