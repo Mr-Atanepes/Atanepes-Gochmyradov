@@ -2146,18 +2146,18 @@
         }
 
         // ── CORE FETCH with cache-busting & no-cache headers ──
-        async function fetchDataJson() {
-          const url = "data.json?t=" + new Date().getTime();
-          const res = await fetch(url, {
-            headers: {
-              "Cache-Control": "no-cache",
-              Pragma: "no-cache",
-            },
-          });
-          if (!res.ok) throw new Error("HTTP " + res.status);
-          return await res.json();
-        }
-
+       async function fetchDataJson() {
+  const url = `data.json?t=${Date.now()}`;
+  const response = await fetch(url, {
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return await response.json();
+}
         // ── load initial state (localStorage first, then fresh fetch) ──
         async function loadState() {
           // 1) try localStorage
@@ -2203,296 +2203,222 @@
       merged.projects = [...defaultState.projects];
     const newStr = JSON.stringify(merged);
 
-    // ✅ NEW: Get timestamps to prevent overwriting
     const localTime = parseInt(localStorage.getItem('portfolioLastUpdated')) || 0;
     const remoteTime = parseInt(localStorage.getItem('portfolioRemoteUpdated')) || 0;
 
-    // ✅ NEW: Only update if remote data is newer
     if (newStr !== lastFetchedStateStr && remoteTime > localTime) {
+      console.log('🔄 Public page: Detected new data, updating...');
+      
       lastFetchedStateStr = newStr;
       state = merged;
+      
       localStorage.setItem('portfolioState', JSON.stringify(state));
       localStorage.setItem('portfolioRemoteUpdated', String(Date.now()));
+      localStorage.setItem('portfolioLastUpdated', String(Date.now()));
+      
+      console.log('🔄 Re-rendering public page...');
       renderAll();
-      showUpdateToast('🔄 Data updated — latest changes applied');
+      
+      showUpdateToast('🔄 Portfolio updated — latest changes applied');
+    } else if (newStr !== lastFetchedStateStr && remoteTime <= localTime) {
+      console.log('ℹ️ Public page: Local data is newer, keeping it');
+    } else {
+      console.log('✅ Public page: Already up to date');
     }
   } catch (e) {
-    // silent fail
+    console.warn('Public page sync failed:', e);
   }
+}
 }
 
         // ── render all DOM elements from state ──
-        function renderAll() {
-          const avail = state.jobStatus === "available";
-          const badge = document.getElementById("heroBadge");
-          badge.textContent = avail
-            ? "✨ Available for work"
-            : "🔒 Currently employed · Not available";
-          badge.className =
-            "hero-badge " + (avail ? "available" : "not-available");
-          badge.setAttribute(
-            "data-translate",
-            avail ? "hero-badge" : "hero-badge-not",
-          );
-
-          document.getElementById("heroName").innerHTML =
-            '<span class="first-name">' +
-            state.firstName +
-            "</span> <em>" +
-            state.lastName +
-            "</em>";
-          document.getElementById("heroTitle").textContent = state.title;
-          document.getElementById("heroDesc").textContent = state.tagline;
-          document.getElementById("termName").textContent = state.terminalName;
-          document.getElementById("termRole").textContent = state.terminalRole;
-          document.getElementById("termLevel").textContent = state.terminalLevel;
-          document.getElementById("termStack").textContent = state.terminalStack;
-          document.getElementById("termLocation").textContent =
-            state.terminalLocation;
-          document.getElementById("termLanguages").textContent =
-            state.terminalLanguages;
-          document.getElementById("aboutP1").innerHTML = state.aboutP1;
-          document.getElementById("aboutP2").innerHTML = state.aboutP2;
-          document.getElementById("aboutP3").innerHTML = state.aboutP3;
-
-          // skill bars
-          const bars = [
-            { n: "React & JavaScript", v: state.profReact, c: "fill-int" },
-            { n: "HTML & CSS", v: state.profHTML, c: "fill-int" },
-            { n: "Node.js / Express", v: state.profNode, c: "fill-int" },
-            { n: "MongoDB", v: state.profMongo, c: "fill-int" },
-            { n: "Docker / CI/CD", v: state.profDocker, c: "fill-beg" },
-          ];
-          document.getElementById("skillBars").innerHTML = bars
-            .map(
-              (b) =>
-                '<div class="prof-item"><div class="prof-header"><span class="prof-name">' +
-                b.n +
-                '</span><span class="prof-lvl">' +
-                b.v +
-                '%</span></div><div class="prof-bar"><div class="prof-fill ' +
-                b.c +
-                '" data-width="' +
-                b.v +
-                '"></div></div></div>',
-            )
-            .join("");
-
-          // skills categories
-          const skillCats = [
-            { labelKey: "cat-frontend", skills: state.frontendSkills },
-            { labelKey: "cat-backend", skills: state.backendSkills },
-            { labelKey: "cat-devops", skills: state.devopsSkills },
-          ];
-          document.getElementById("skillsContainer").innerHTML = skillCats
-            .map(
-              (cat) =>
-                '<div class="reveal"><div class="skill-cat-label" data-translate="' +
-                cat.labelKey +
-                '">' +
-                translations[currentLang][cat.labelKey] +
-                '</div><div class="skills-grid">' +
-                cat.skills
-                  .map(
-                    (s) =>
-                      '<div class="skill-item"><div class="skill-icon">' +
-                      s.icon +
-                      '</div><div class="skill-info"><div class="skill-name">' +
-                      s.name +
-                      '</div><div class="skill-detail">' +
-                      s.detail +
-                      "</div></div></div>",
-                  )
-                  .join("") +
-                "</div></div>",
-            )
-            .join("");
-
-          // experience
-          document.getElementById("experienceContainer").innerHTML =
-            state.experience
-              .map(
-                (e) =>
-                  '<div class="tl-item"><div class="tl-dot"></div><div class="tl-card"><div class="tl-header"><div><div class="tl-company">' +
-                  e.company +
-                  '</div><div class="tl-role">' +
-                  e.role +
-                  '</div></div><span class="tl-period">' +
-                  e.period +
-                  '</span></div><ul class="tl-list">' +
-                  e.bullets.map((b) => "<li>" + b + "</li>").join("") +
-                  "</ul></div></div>",
-              )
-              .join("");
-
-          // projects
-          document.getElementById("projectsContainer").innerHTML =
-            state.projects
-              .map(
-                (p, i) =>
-                  '<div class="project-card"><div class="project-card-inner">' +
-                  '<div class="project-card-front">' +
-                  '<div class="project-number">' +
-                  String(i + 1).padStart(2, "0") +
-                  "</div>" +
-                  '<div class="project-name">' +
-                  p.name +
-                  "</div>" +
-                  '<p class="project-desc">' +
-                  p.desc +
-                  "</p>" +
-                  '<div class="project-tags">' +
-                  p.tags
-                    .map(
-                      (t) =>
-                        '<span class="tag' +
-                        (t === "React" || t === "MongoDB" ? " gold" : "") +
-                        '">' +
-                        t +
-                        "</span>",
-                    )
-                    .join("") +
-                  (p.status === "featured"
-                    ? ' <span class="tag gold">⭐ Featured</span>'
-                    : p.status === "wip"
-                      ? ' <span class="tag">🌱 WIP</span>'
-                      : "") +
-                  "</div></div>" +
-                  '<div class="project-card-back">' +
-                  '<div class="project-number" style="font-size:1.8rem;margin-bottom:0;">' +
-                  String(i + 1).padStart(2, "0") +
-                  "</div>" +
-                  '<div class="project-name">' +
-                  p.name +
-                  "</div>" +
-                  '<div class="project-tags">' +
-                  p.tags
-                    .map(
-                      (t) =>
-                        '<span class="tag' +
-                        (t === "React" || t === "MongoDB" ? " gold" : "") +
-                        '">' +
-                        t +
-                        "</span>",
-                    )
-                    .join("") +
-                  (p.status === "featured"
-                    ? ' <span class="tag gold">⭐ Featured</span>'
-                    : p.status === "wip"
-                      ? ' <span class="tag">🌱 WIP</span>'
-                      : "") +
-                  '</div><div class="project-links">' +
-                  (p.github
-                    ? '<a href="' +
-                      p.github +
-                      '" target="_blank" rel="noopener" class="project-link-btn">⚡ GitHub</a>'
-                    : "") +
-                  (p.demo
-                    ? '<a href="' +
-                      p.demo +
-                      '" target="_blank" rel="noopener" class="project-link-btn">↗ Live Demo</a>'
-                    : "") +
-                  "</div></div></div></div>",
-              )
-              .join("");
-
-          // education
-          document.getElementById("educationContainer").innerHTML =
-            state.education
-              .map(
-                (e) =>
-                  '<div class="edu-card reveal"><div class="edu-icon">🎓</div><div class="edu-info"><div class="edu-degree">' +
-                  e.degree +
-                  '</div><div class="edu-school">' +
-                  e.school +
-                  '</div><div class="edu-period">' +
-                  e.period +
-                  "</div></div></div>",
-              )
-              .join("");
-
-          // contact links
-          document.getElementById("contactLinks").innerHTML =
-            '<a href="mailto:' +
-            state.email +
-            '" class="contact-link">' +
-            '<div class="contact-link-icon">✉️</div>' +
-            '<div class="contact-link-info">' +
-            '<div class="contact-link-label">Need a website?</div>' +
-            '<div class="contact-link-sublabel">Let\'s talk</div>' +
-            "</div></a>" +
-            '<a href="tel:' +
-            state.phone +
-            '" class="contact-link">' +
-            '<div class="contact-link-icon">📱</div>' +
-            '<div class="contact-link-info">' +
-            '<div class="contact-link-label">Prefer a call?</div>' +
-            '<div class="contact-link-sublabel">Anytime</div>' +
-            "</div></a>" +
-            '<div class="contact-link"> ' +
-            '<div class="contact-link-icon">📍</div>' +
-            '<div class="contact-link-info">' +
-            '<div class="contact-link-label">My location</div>' +
-            '<div class="contact-link-sublabel">' +
-            state.location +
-            "</div>" +
-            "</div></div>";
-
-          // availability
-          const availBadge = document.getElementById("availabilityText");
-          const availContainer = availBadge.closest(".availability");
-          if (state.jobStatus === "available") {
-            availBadge.textContent =
-              "Available for opportunities · " + state.location;
-            availBadge.style.color = "#27c93f";
-            if (availContainer) {
-              availContainer.style.background = "rgba(39, 201, 63, 0.08)";
-              availContainer.style.border = "1px solid rgba(39, 201, 63, 0.2)";
-            }
-            const dot = availContainer?.querySelector(".avail-dot");
-            if (dot) dot.style.background = "#27c93f";
-          } else {
-            availBadge.textContent =
-              "🔒 Currently employed · Not seeking opportunities";
-            availBadge.style.color = "#ff6b6b";
-            if (availContainer) {
-              availContainer.style.background = "rgba(255, 90, 90, 0.08)";
-              availContainer.style.border = "1px solid rgba(255, 90, 90, 0.2)";
-            }
-            const dot = availContainer?.querySelector(".avail-dot");
-            if (dot) dot.style.background = "#ff6b6b";
-          }
-
-          const contactIntro = document.getElementById("contactIntro");
-          if (contactIntro) {
-            if (state.jobStatus === "available") {
-              contactIntro.textContent =
-                "I'm actively looking for my first professional role as a full-stack developer. Whether you have a project, a junior opening, or just want to chat — my inbox is open.";
-            } else {
-              contactIntro.textContent =
-                "I'm currently employed but always open to exciting opportunities. Whether you have a project, collaboration idea, or just want to connect — don't hesitate to reach out.";
-            }
-          }
-
-          // apply language after DOM update
-          applyLanguage(currentLang);
-
-          // animate skill bars & reveal items
-          setTimeout(() => {
-            document.querySelectorAll(".prof-fill").forEach(function (b) {
-              if (b.dataset.width) b.style.width = b.dataset.width + "%";
-            });
-            document
-              .querySelectorAll(".reveal,.tl-item,.project-card")
-              .forEach(function (el) {
-                el.classList.add("visible");
-              });
-          }, 100);
-
-          document.getElementById("currentYear").textContent =
-            new Date().getFullYear();
-        }
-
+   function renderAll() {
+  console.log('🔄 Public page: renderAll() called');
+  
+  const data = state;
+  
+  // ─── HERO BADGE ───
+  const badge = document.getElementById('heroBadge');
+  if (badge) {
+    const avail = data.jobStatus === 'available';
+    badge.textContent = avail ? '✨ Available for work' : '🔒 Currently employed · Not available';
+    badge.className = 'hero-badge ' + (avail ? 'available' : 'not-available');
+  }
+  
+  // ─── HERO NAME ───
+  const heroName = document.getElementById('heroName');
+  if (heroName) {
+    heroName.innerHTML = '<span class="first-name">' + data.firstName + '</span> <em>' + data.lastName + '</em>';
+  }
+  
+  // ─── HERO TITLE ───
+  const heroTitle = document.getElementById('heroTitle');
+  if (heroTitle) {
+    heroTitle.textContent = data.title;
+  }
+  
+  // ─── HERO DESCRIPTION ───
+  const heroDesc = document.getElementById('heroDesc');
+  if (heroDesc) {
+    heroDesc.textContent = data.tagline;
+  }
+  
+  // ─── TERMINAL ───
+  const termName = document.getElementById('termName');
+  if (termName) termName.textContent = data.terminalName;
+  
+  const termRole = document.getElementById('termRole');
+  if (termRole) termRole.textContent = data.terminalRole;
+  
+  const termLevel = document.getElementById('termLevel');
+  if (termLevel) termLevel.textContent = data.terminalLevel;
+  
+  const termStack = document.getElementById('termStack');
+  if (termStack) termStack.textContent = data.terminalStack;
+  
+  const termLocation = document.getElementById('termLocation');
+  if (termLocation) termLocation.textContent = data.terminalLocation;
+  
+  const termLanguages = document.getElementById('termLanguages');
+  if (termLanguages) termLanguages.textContent = data.terminalLanguages;
+  
+  // ─── ABOUT ───
+  const aboutP1 = document.getElementById('aboutP1');
+  if (aboutP1) aboutP1.innerHTML = data.aboutP1;
+  
+  const aboutP2 = document.getElementById('aboutP2');
+  if (aboutP2) aboutP2.innerHTML = data.aboutP2;
+  
+  const aboutP3 = document.getElementById('aboutP3');
+  if (aboutP3) aboutP3.innerHTML = data.aboutP3;
+  
+  // ─── SKILL BARS ───
+  const bars = [
+    { n: "React & JavaScript", v: data.profReact },
+    { n: "HTML & CSS", v: data.profHTML },
+    { n: "Node.js / Express", v: data.profNode },
+    { n: "MongoDB", v: data.profMongo },
+    { n: "Docker / CI/CD", v: data.profDocker, c: "fill-beg" },
+  ];
+  const skillBars = document.getElementById('skillBars');
+  if (skillBars) {
+    skillBars.innerHTML = bars.map((b) =>
+      `<div class="prof-item"><div class="prof-header"><span class="prof-name">${b.n}</span><span class="prof-lvl">${b.v}%</span></div><div class="prof-bar"><div class="prof-fill ${b.c || "fill-int"}" data-width="${b.v}"></div></div></div>`
+    ).join("");
+  }
+  
+  // ─── SKILLS CATEGORIES ───
+  const skillsContainer = document.getElementById('skillsContainer');
+  if (skillsContainer) {
+    const skillCats = [
+      { label: "Frontend Development", skills: data.frontendSkills },
+      { label: "Backend Development", skills: data.backendSkills },
+      { label: "DevOps & Tools", skills: data.devopsSkills },
+    ];
+    skillsContainer.innerHTML = skillCats.map((cat) =>
+      `<div class="reveal"><div class="skill-cat-label">${cat.label}</div><div class="skills-grid">${cat.skills.map((s) =>
+        `<div class="skill-item"><div class="skill-icon">${s.icon}</div><div class="skill-info"><div class="skill-name">${s.name}</div><div class="skill-detail">${s.detail}</div></div></div>`
+      ).join("")}</div></div>`
+    ).join("");
+  }
+  
+  // ─── EXPERIENCE ───
+  const expContainer = document.getElementById('experienceContainer');
+  if (expContainer) {
+    expContainer.innerHTML = data.experience.map((e) =>
+      `<div class="tl-item"><div class="tl-dot"></div><div class="tl-card"><div class="tl-header"><div><div class="tl-company">${e.company}</div><div class="tl-role">${e.role}</div></div><span class="tl-period">${e.period}</span></div><ul class="tl-list">${e.bullets.map((b) => "<li>" + b + "</li>").join("")}</ul></div></div>`
+    ).join("");
+  }
+  
+  // ─── PROJECTS ───
+  const projectsContainer = document.getElementById('projectsContainer');
+  if (projectsContainer) {
+    projectsContainer.innerHTML = data.projects.map((p, i) =>
+      `<div class="project-card"><div class="project-card-inner">
+        <div class="project-card-front">
+          <div class="project-number">${String(i + 1).padStart(2, "0")}</div>
+          <div class="project-name">${p.name}</div>
+          <p class="project-desc">${p.desc}</p>
+          <div class="project-tags">${p.tags.map((t) =>
+            `<span class="tag${t === "React" || t === "MongoDB" ? " gold" : ""}">${t}</span>`
+          ).join("")}${p.status === "featured" ? ' <span class="tag gold">⭐ Featured</span>' : p.status === "wip" ? ' <span class="tag">🌱 WIP</span>' : ""}</div>
+        </div>
+        <div class="project-card-back">
+          <div class="project-number" style="font-size:1.8rem;margin-bottom:0;">${String(i + 1).padStart(2, "0")}</div>
+          <div class="project-name">${p.name}</div>
+          <div class="project-tags">${p.tags.map((t) =>
+            `<span class="tag${t === "React" || t === "MongoDB" ? " gold" : ""}">${t}</span>`
+          ).join("")}${p.status === "featured" ? ' <span class="tag gold">⭐ Featured</span>' : p.status === "wip" ? ' <span class="tag">🌱 WIP</span>' : ""}</div>
+          <div class="project-links">${p.github ? `<a href="${p.github}" target="_blank" class="project-link-btn">⚡ GitHub</a>` : ""}${p.demo ? `<a href="${p.demo}" target="_blank" class="project-link-btn">↗ Live Demo</a>` : ""}</div>
+        </div>
+      </div></div>`
+    ).join("");
+  }
+  
+  // ─── EDUCATION ───
+  const eduContainer = document.getElementById('educationContainer');
+  if (eduContainer) {
+    eduContainer.innerHTML = data.education.map((e) =>
+      `<div class="edu-card"><div class="edu-icon">🎓</div><div class="edu-info"><div class="edu-degree">${e.degree}</div><div class="edu-school">${e.school}</div><div class="edu-period">${e.period}</div></div></div>`
+    ).join("");
+  }
+  
+  // ─── CONTACT ───
+  const contactIntro = document.getElementById('contactIntro');
+  if (contactIntro) {
+    contactIntro.textContent = data.jobStatus === 'available' 
+      ? "I'm actively looking for my first professional role as a full-stack developer. Whether you have a project, a junior opening, or just want to chat — my inbox is open."
+      : "I'm currently employed and not seeking new opportunities at this time. Feel free to connect for networking or future possibilities.";
+  }
+  
+  // ─── AVAILABILITY ───
+  const availabilityText = document.getElementById('availabilityText');
+  if (availabilityText) {
+    if (data.jobStatus === 'available') {
+      availabilityText.textContent = 'Available for opportunities · ' + data.location;
+      availabilityText.style.color = '#27c93f';
+    } else {
+      availabilityText.textContent = '🔒 Currently employed · Not seeking opportunities';
+      availabilityText.style.color = '#ff6b6b';
+    }
+  }
+  
+  // ─── CONTACT LINKS (Update email, phone, location) ───
+  const contactLinks = document.getElementById('contactLinks');
+  if (contactLinks) {
+    contactLinks.innerHTML = `
+      <a href="mailto:${data.email}" class="contact-link">
+        <div class="contact-link-icon">✉️</div>
+        <div class="contact-link-info">
+          <div class="contact-link-label">Need a website?</div>
+          <div class="contact-link-sublabel">Let's talk</div>
+        </div>
+      </a>
+      <a href="tel:${data.phone}" class="contact-link">
+        <div class="contact-link-icon">📱</div>
+        <div class="contact-link-info">
+          <div class="contact-link-label">Prefer a call?</div>
+          <div class="contact-link-sublabel">Anytime</div>
+        </div>
+      </a>
+      <div class="contact-link">
+        <div class="contact-link-icon">📍</div>
+        <div class="contact-link-info">
+          <div class="contact-link-label">My location</div>
+          <div class="contact-link-sublabel">${data.location}</div>
+        </div>
+      </div>
+    `;
+  }
+  
+  // ─── FOOTER YEAR ───
+  const yearEl = document.getElementById('currentYear');
+  if (yearEl) {
+    yearEl.textContent = new Date().getFullYear();
+  }
+  
+  console.log('✅ Public page: renderAll() complete');
+}
         // ── language apply ──
         function applyLanguage(lang) {
           if (!translations[lang]) return;
